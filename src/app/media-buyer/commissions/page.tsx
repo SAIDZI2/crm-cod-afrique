@@ -1,0 +1,156 @@
+'use client';
+
+import { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { KpiCard } from '@/components/kpi-card';
+import { mockUsers, mockCommandes, mockCommissions } from '@/lib/mock-data';
+import { formatCurrency } from '@/lib/constants';
+
+export default function CommissionsPage() {
+  const currentUserId = 'u1';
+
+  const sousAffilies = useMemo(
+    () => mockUsers.filter((u) => u.parent_id === currentUserId),
+    []
+  );
+
+  const affilieStats = useMemo(() => {
+    return sousAffilies.map((affilie) => {
+      const commandes = mockCommandes.filter((c) => c.user_id === affilie.id);
+      const livrees = commandes.filter((c) => c.statut === 'livre');
+      const commissions = mockCommissions.filter((c) => c.user_id === affilie.id);
+      const totalCommission = commissions.reduce((s, c) => s + c.montant, 0);
+      const aPayer = commissions
+        .filter((c) => c.statut === 'approuvee')
+        .reduce((s, c) => s + c.montant, 0);
+      const enAttente = commissions
+        .filter((c) => c.statut === 'en_attente')
+        .reduce((s, c) => s + c.montant, 0);
+      const paye = commissions
+        .filter((c) => c.statut === 'payee')
+        .reduce((s, c) => s + c.montant, 0);
+
+      return {
+        ...affilie,
+        totalCommandes: commandes.length,
+        livrees: livrees.length,
+        totalCommission,
+        aPayer,
+        enAttente,
+        paye,
+      };
+    });
+  }, [sousAffilies]);
+
+  const totalAPayer = affilieStats.reduce((s, a) => s + a.aPayer, 0);
+  const totalEnAttente = affilieStats.reduce((s, a) => s + a.enAttente, 0);
+  const totalPaye = affilieStats.reduce((s, a) => s + a.paye, 0);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Commissions Sous-affilies</h1>
+
+      {/* Summary KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KpiCard
+          label="Total Sous-affilies"
+          value={sousAffilies.length}
+          color="border-blue-500"
+        />
+        <KpiCard
+          label="A Payer"
+          value={formatCurrency(totalAPayer)}
+          color="border-orange-500"
+        />
+        <KpiCard
+          label="En Attente"
+          value={formatCurrency(totalEnAttente)}
+          color="border-yellow-500"
+        />
+        <KpiCard
+          label="Paye"
+          value={formatCurrency(totalPaye)}
+          color="border-green-500"
+        />
+      </div>
+
+      {/* Sub-affiliates Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sous-affilies et leurs Commissions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Commandes</TableHead>
+                <TableHead>Livrees</TableHead>
+                <TableHead>Commission %</TableHead>
+                <TableHead>Total Commission</TableHead>
+                <TableHead>A Payer</TableHead>
+                <TableHead>En Attente</TableHead>
+                <TableHead>Paye</TableHead>
+                <TableHead>Statut</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {affilieStats.map((affilie) => (
+                <TableRow key={affilie.id}>
+                  <TableCell className="font-medium">{affilie.nom}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {affilie.email}
+                  </TableCell>
+                  <TableCell className="font-semibold">{affilie.totalCommandes}</TableCell>
+                  <TableCell className="font-semibold text-emerald-600">
+                    {affilie.livrees}
+                  </TableCell>
+                  <TableCell className="text-sm">{affilie.commission_pct}%</TableCell>
+                  <TableCell className="font-semibold">
+                    {formatCurrency(affilie.totalCommission)}
+                  </TableCell>
+                  <TableCell className="text-orange-600 font-medium">
+                    {formatCurrency(affilie.aPayer)}
+                  </TableCell>
+                  <TableCell className="text-yellow-600 font-medium">
+                    {formatCurrency(affilie.enAttente)}
+                  </TableCell>
+                  <TableCell className="text-green-600 font-medium">
+                    {formatCurrency(affilie.paye)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        affilie.actif
+                          ? 'bg-green-100 text-green-700 border-0'
+                          : 'bg-red-100 text-red-700 border-0'
+                      }
+                    >
+                      {affilie.actif ? 'Actif' : 'Inactif'}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {affilieStats.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucun sous-affilie dans votre equipe.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

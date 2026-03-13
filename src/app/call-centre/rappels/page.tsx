@@ -1,0 +1,245 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { mockRappels, mockProduits, mockCommandes } from '@/lib/mock-data';
+import { formatCurrency } from '@/lib/constants';
+import { Phone, FileText, AlertTriangle, Clock } from 'lucide-react';
+import type { StatutRappel } from '@/lib/types';
+
+const statutRappelConfig: Record<StatutRappel, { label: string; color: string }> = {
+  en_attente: { label: 'En attente', color: 'bg-yellow-100 text-yellow-700' },
+  effectue: { label: 'Effectue', color: 'bg-green-100 text-green-700' },
+  manque: { label: 'Manque', color: 'bg-red-100 text-red-700' },
+};
+
+export default function RappelsPage() {
+  const [statusFilter, setStatusFilter] = useState<string>('tous');
+
+  const filteredRappels = useMemo(() => {
+    let rappels = [...mockRappels];
+
+    if (statusFilter !== 'tous') {
+      rappels = rappels.filter((r) => r.statut === statusFilter);
+    }
+
+    // Sort by date_rappel
+    rappels.sort(
+      (a, b) => new Date(a.date_rappel).getTime() - new Date(b.date_rappel).getTime()
+    );
+
+    return rappels;
+  }, [statusFilter]);
+
+  // Group rappels by hour
+  const groupedByHour = useMemo(() => {
+    const groups: Record<string, typeof filteredRappels> = {};
+
+    filteredRappels.forEach((rappel) => {
+      const date = new Date(rappel.date_rappel);
+      const hourKey = `${date.getHours().toString().padStart(2, '0')}:00`;
+      if (!groups[hourKey]) {
+        groups[hourKey] = [];
+      }
+      groups[hourKey].push(rappel);
+    });
+
+    // Sort hours
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredRappels]);
+
+  const overdueCount = useMemo(() => {
+    const now = new Date();
+    return mockRappels.filter(
+      (r) => r.statut === 'en_attente' && new Date(r.date_rappel) < now
+    ).length;
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Rappels</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Gestion des rappels planifies - {filteredRappels.length} rappels
+        </p>
+      </div>
+
+      {/* Overdue Alert */}
+      {overdueCount > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+          <div>
+            <p className="font-medium text-red-800">
+              {overdueCount} rappel{overdueCount > 1 ? 's' : ''} en retard
+            </p>
+            <p className="text-sm text-red-600">
+              Ces rappels auraient du etre effectues. Traitez-les en priorite.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-end gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Statut</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous les statuts</SelectItem>
+                  <SelectItem value="en_attente">En attente</SelectItem>
+                  <SelectItem value="effectue">Effectue</SelectItem>
+                  <SelectItem value="manque">Manque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar-like view grouped by hour */}
+      <div className="space-y-4">
+        {groupedByHour.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>Aucun rappel pour les filtres selectionnes.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {groupedByHour.map(([hour, rappels]) => {
+          const now = new Date();
+          const currentHour = now.getHours();
+          const hourNum = parseInt(hour);
+          const isPastHour = hourNum < currentHour;
+
+          return (
+            <Card key={hour} className={isPastHour ? 'border-red-200' : ''}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg ${
+                      isPastHour
+                        ? 'bg-red-100 text-red-700'
+                        : hourNum === currentHour
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {hour.split(':')[0]}h
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">
+                      {hour}
+                      {isPastHour && (
+                        <Badge variant="outline" className="ml-2 bg-red-100 text-red-700 border-red-200">
+                          En retard
+                        </Badge>
+                      )}
+                      {hourNum === currentHour && (
+                        <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-700 border-blue-200">
+                          Heure actuelle
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {rappels.length} rappel{rappels.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {rappels.map((rappel) => {
+                    const commande = rappel.commande || mockCommandes.find((c) => c.id === rappel.commande_id);
+                    const isOverdue =
+                      rappel.statut === 'en_attente' && new Date(rappel.date_rappel) < now;
+
+                    // Get product for display
+                    const cmdIndex = commande ? mockCommandes.indexOf(commande) : 0;
+                    const produit = mockProduits[cmdIndex >= 0 ? cmdIndex % mockProduits.length : 0];
+
+                    return (
+                      <div
+                        key={rappel.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          isOverdue ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm font-mono text-muted-foreground">
+                            {new Date(rappel.date_rappel).toLocaleTimeString('fr-FR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">
+                              {commande?.destinataire_nom || 'Client inconnu'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {commande?.telephone || '-'} - {produit?.nom || 'Produit'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {commande && (
+                            <span className="text-sm font-medium">
+                              {formatCurrency(commande.montant_total)}
+                            </span>
+                          )}
+
+                          <Badge
+                            variant="outline"
+                            className={`${statutRappelConfig[rappel.statut].color} border-0`}
+                          >
+                            {statutRappelConfig[rappel.statut].label}
+                          </Badge>
+
+                          <div className="flex gap-1">
+                            {commande && (
+                              <Link href={`/call-centre/commande/${commande.id}`}>
+                                <Button variant="outline" size="sm" className="gap-1">
+                                  <FileText className="w-3 h-3" />
+                                  Fiche
+                                </Button>
+                              </Link>
+                            )}
+                            {rappel.statut === 'en_attente' && commande && (
+                              <Link href={`/call-centre/commande/${commande.id}`}>
+                                <Button size="sm" className="gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  Appeler
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
