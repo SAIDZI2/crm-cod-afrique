@@ -95,7 +95,7 @@ export default function RappelsPage() {
           <div className="flex items-end gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Statut</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => v && setStatusFilter(v)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>

@@ -47,7 +47,7 @@ export default function OffresPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
-        <Select value={categorie} onValueChange={setCategorie}>
+        <Select value={categorie} onValueChange={(v) => v && setCategorie(v)}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Categorie" />
           </SelectTrigger>

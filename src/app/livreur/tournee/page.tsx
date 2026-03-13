@@ -180,15 +180,14 @@ export default function LivreurTourneePage() {
                       <RotateCcw className="w-5 h-5 mr-2" />
                       Retour
                     </Button>
-                    <Button
-                      className="min-h-12 min-w-12"
-                      variant="outline"
-                      asChild
-                    >
-                      <a href={`tel:${cmd.telephone}`}>
+                    <a href={`tel:${cmd.telephone}`}>
+                      <Button
+                        className="min-h-12 min-w-12"
+                        variant="outline"
+                      >
                         <Phone className="w-5 h-5 text-blue-600" />
-                      </a>
-                    </Button>
+                      </Button>
+                    </a>
                   </div>
                 )}
 
@@ -241,7 +240,7 @@ export default function LivreurTourneePage() {
                       <Label className="text-sm font-medium">Motif du retour</Label>
                       <Select
                         value={motifRetour}
-                        onValueChange={(val: string) => setMotifRetour(val as MotifRetour)}
+                        onValueChange={(val) => val && setMotifRetour(val as MotifRetour)}
                       >
                         <SelectTrigger className="mt-1 min-h-12 w-full">
                           <SelectValue placeholder="Selectionner un motif" />

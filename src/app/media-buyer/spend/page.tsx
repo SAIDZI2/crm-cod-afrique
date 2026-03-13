@@ -67,7 +67,7 @@ export default function SpendPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gestion des Depenses Publicitaires</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
+          <DialogTrigger>
             <Button>+ Nouvelle Depense</Button>
           </DialogTrigger>
           <DialogContent>
@@ -80,7 +80,7 @@ export default function SpendPage() {
                 <Select
                   value={newDepense.produit_id}
                   onValueChange={(v) =>
-                    setNewDepense((prev) => ({ ...prev, produit_id: v }))
+                    setNewDepense((prev) => ({ ...prev, produit_id: v ?? '' }))
                   }
                 >
                   <SelectTrigger>

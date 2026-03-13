@@ -61,7 +61,7 @@ export default function CommandesPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
-        <Select value={statutFilter} onValueChange={setStatutFilter}>
+        <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Statut" />
           </SelectTrigger>

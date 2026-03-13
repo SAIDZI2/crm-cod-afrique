@@ -195,7 +195,7 @@ export default function FileAppelsPage() {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Statut</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => v && setStatusFilter(v)}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -219,7 +219,7 @@ export default function FileAppelsPage() {
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Produit</label>
-              <Select value={productFilter} onValueChange={setProductFilter}>
+              <Select value={productFilter} onValueChange={(v) => v && setProductFilter(v)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -236,7 +236,7 @@ export default function FileAppelsPage() {
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Ville</label>
-              <Select value={cityFilter} onValueChange={setCityFilter}>
+              <Select value={cityFilter} onValueChange={(v) => v && setCityFilter(v)}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>

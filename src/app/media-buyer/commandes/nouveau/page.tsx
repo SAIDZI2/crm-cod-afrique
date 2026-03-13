@@ -97,7 +97,7 @@ export default function NouvelleCommandePage() {
 
             <div className="space-y-2">
               <Label htmlFor="ville">Ville *</Label>
-              <Select value={form.ville} onValueChange={(v) => handleChange('ville', v)}>
+              <Select value={form.ville} onValueChange={(v) => handleChange('ville', v ?? '')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selectionner une ville" />
                 </SelectTrigger>
@@ -120,7 +120,7 @@ export default function NouvelleCommandePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="produit">Produit *</Label>
-              <Select value={form.produit_id} onValueChange={(v) => handleChange('produit_id', v)}>
+              <Select value={form.produit_id} onValueChange={(v) => handleChange('produit_id', v ?? '')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selectionner un produit" />
                 </SelectTrigger>
