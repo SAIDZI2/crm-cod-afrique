@@ -11,6 +11,7 @@ const DEMO_ACCOUNTS = [
   { email: 'said@crm.com', role: 'media_buyer', label: 'Media Buyer', path: '/media-buyer/dashboard', color: 'bg-orange-500' },
   { email: 'karim@crm.com', role: 'call_center', label: 'Call Centre', path: '/call-centre/dashboard', color: 'bg-blue-500' },
   { email: 'moise@crm.com', role: 'livreur', label: 'Livreur', path: '/livreur/dashboard', color: 'bg-green-500' },
+  { email: 'admin@crm.com', role: 'admin', label: 'Admin', path: '/admin', color: 'bg-purple-500' },
 ];
 
 export default function LoginPage() {
