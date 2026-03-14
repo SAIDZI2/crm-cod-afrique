@@ -247,13 +247,13 @@ export async function createDepense(depense: Partial<Depense>) {
 export async function getCommissions(userId?: string) {
   let query = supabase
     .from('commissions')
-    .select('*, commande:commandes(*)')
+    .select('*, commande:commandes(*), user:users!commissions_user_id_fkey(*)')
     .order('created_at', { ascending: false });
   if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as (Commission & { commande: Commande })[];
+  return data as (Commission & { commande: Commande; user: User })[];
 }
 
 // ============================================
