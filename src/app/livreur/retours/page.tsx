@@ -7,11 +7,10 @@ import {
   TableHeader, TableRow
 } from '@/components/ui/table';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getRetours } from '@/lib/supabase/queries';
 import { formatDate, MOTIFS_RETOUR } from '@/lib/constants';
 import { RotateCcw, CheckCircle, XCircle } from 'lucide-react';
-
-const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
 
 const MOTIF_COLORS: Record<string, { bg: string; text: string }> = {
   absent: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -25,7 +24,11 @@ const MOTIF_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export default function LivreurRetoursPage() {
-  const { data: retoursData, loading } = useSupabase(() => getRetours(LIVREUR_ID), []);
+  const { user } = useAuth();
+  const { data: retoursData, loading } = useSupabase(
+    () => (user ? getRetours(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
 
   if (loading) return <LoadingPage />;
   const retours = retoursData ?? [];

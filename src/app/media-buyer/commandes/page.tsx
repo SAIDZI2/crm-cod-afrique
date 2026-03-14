@@ -21,12 +21,17 @@ import {
 } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, STATUT_CONFIG } from '@/lib/constants';
 import type { StatutCommande } from '@/lib/types';
 
 export default function CommandesPage() {
-  const { data: commandes, loading } = useSupabase(() => getCommandes(), []);
+  const { user } = useAuth();
+  const { data: commandes, loading } = useSupabase(
+    () => (user ? getCommandes({ userId: user.id }) : Promise.resolve([])),
+    [user?.id]
+  );
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('tous');
   const [dateDebut, setDateDebut] = useState('');

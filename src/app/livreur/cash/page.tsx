@@ -16,15 +16,21 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getAllTourneeCommandes, getRemisesCash } from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime } from '@/lib/constants';
 import { Banknote, ClipboardCheck, AlertTriangle } from 'lucide-react';
 
-const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
-
 export default function LivreurCashPage() {
-  const { data: tcData, loading: l1 } = useSupabase(() => getAllTourneeCommandes(), []);
-  const { data: remisesData, loading: l2 } = useSupabase(() => getRemisesCash(LIVREUR_ID), []);
+  const { user } = useAuth();
+  const { data: tcData, loading: l1 } = useSupabase(
+    () => (user ? getAllTourneeCommandes(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
+  const { data: remisesData, loading: l2 } = useSupabase(
+    () => (user ? getRemisesCash(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
   const [showCloture, setShowCloture] = useState(false);
   const [showRemise, setShowRemise] = useState(false);
   const [montantRemise, setMontantRemise] = useState('');

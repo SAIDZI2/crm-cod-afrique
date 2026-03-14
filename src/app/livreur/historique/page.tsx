@@ -6,11 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getTournees, getAllTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
 import { Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
-
-const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
 
 const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
   en_preparation: { label: 'En Preparation', bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -19,8 +18,15 @@ const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: s
 };
 
 export default function LivreurHistoriquePage() {
-  const { data: tourneesData, loading: l1 } = useSupabase(() => getTournees(LIVREUR_ID), []);
-  const { data: tcData, loading: l2 } = useSupabase(() => getAllTourneeCommandes(), []);
+  const { user } = useAuth();
+  const { data: tourneesData, loading: l1 } = useSupabase(
+    () => (user ? getTournees(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
+  const { data: tcData, loading: l2 } = useSupabase(
+    () => (user ? getAllTourneeCommandes(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
   const [expandedTournee, setExpandedTournee] = useState<string | null>(null);
 
   if (l1 || l2) return <LoadingPage />;

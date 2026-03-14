@@ -12,15 +12,15 @@ import {
 } from '@/components/ui/table';
 import { KpiCard } from '@/components/kpi-card';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getSubAffiliates, getCommandes, getCommissions } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 
-const CURRENT_USER_ID = 'a1000000-0000-0000-0000-000000000001';
-
 export default function CommissionsPage() {
+  const { user } = useAuth();
   const { data: sousAffiliesData, loading: l1 } = useSupabase(
-    () => getSubAffiliates(CURRENT_USER_ID),
-    []
+    () => (user ? getSubAffiliates(user.id) : Promise.resolve([])),
+    [user?.id]
   );
   const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
   const { data: commissionsData, loading: l3 } = useSupabase(() => getCommissions(), []);

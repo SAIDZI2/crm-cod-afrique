@@ -4,16 +4,16 @@ import { useMemo } from 'react';
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getTourneeEnCours, getTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 
-const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
-
 export default function LivreurDashboardPage() {
+  const { user } = useAuth();
   const { data: tourneeActuelle, loading: loadingTournee } = useSupabase(
-    () => getTourneeEnCours(LIVREUR_ID),
-    []
+    () => (user ? getTourneeEnCours(user.id) : Promise.resolve(null)),
+    [user?.id]
   );
 
   const tourneeId = tourneeActuelle?.id;

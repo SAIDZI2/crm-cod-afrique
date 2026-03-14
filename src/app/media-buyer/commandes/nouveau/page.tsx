@@ -15,11 +15,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getProduits, createCommande, createCommandeProduits } from '@/lib/supabase/queries';
 import { formatCurrency, VILLES_RDC } from '@/lib/constants';
 
 export default function NouvelleCommandePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { data: produits, loading } = useSupabase(() => getProduits(), []);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -55,6 +57,7 @@ export default function NouvelleCommandePage() {
     try {
       setSubmitting(true);
       const commande = await createCommande({
+        user_id: user!.id,
         destinataire_nom: form.destinataire_nom,
         telephone: form.telephone,
         adresse: form.adresse,

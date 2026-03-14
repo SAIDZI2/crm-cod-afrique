@@ -10,17 +10,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getAllTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import { Phone, Package, CheckCircle, RotateCcw, MapPin } from 'lucide-react';
 
-const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
-
 type FilterTab = 'tous' | 'en_cours' | 'livre' | 'retourne';
 
 export default function LivreurTourneePage() {
-  const { data: tcData, loading } = useSupabase(() => getAllTourneeCommandes(), []);
+  const { user } = useAuth();
+  const { data: tcData, loading } = useSupabase(
+    () => (user ? getAllTourneeCommandes(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
   const [filter, setFilter] = useState<FilterTab>('tous');
   const [expandedLivre, setExpandedLivre] = useState<string | null>(null);
   const [expandedRetour, setExpandedRetour] = useState<string | null>(null);

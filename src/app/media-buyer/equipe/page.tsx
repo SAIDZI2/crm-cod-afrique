@@ -11,15 +11,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getSubAffiliates, getCommandes } from '@/lib/supabase/queries';
 import { formatDate } from '@/lib/constants';
 
-const CURRENT_USER_ID = 'a1000000-0000-0000-0000-000000000001';
-
 export default function EquipePage() {
+  const { user } = useAuth();
   const { data: membersData, loading: l1 } = useSupabase(
-    () => getSubAffiliates(CURRENT_USER_ID),
-    []
+    () => (user ? getSubAffiliates(user.id) : Promise.resolve([])),
+    [user?.id]
   );
   const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
 

@@ -15,9 +15,11 @@ import {
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/constants';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getBlacklist, addToBlacklist } from '@/lib/supabase/queries';
 
 export default function BlacklistPage() {
+  const { user } = useAuth();
   const { data: blacklistData, loading, refetch } = useSupabase(() => getBlacklist(), []);
   const [search, setSearch] = useState('');
   const [newTelephone, setNewTelephone] = useState('');
@@ -41,7 +43,7 @@ export default function BlacklistPage() {
       await addToBlacklist({
         telephone: newTelephone.trim(),
         motif: newMotif.trim() || undefined,
-        user_id: 'a1000000-0000-0000-0000-000000000001',
+        user_id: user!.id,
       });
       setNewTelephone('');
       setNewMotif('');

@@ -1,6 +1,9 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
+import { useAuth, getRoleBasePath, isRoleAllowedForPath } from '@/hooks/use-auth';
+import { LoadingPage } from '@/hooks/use-supabase';
 
 const sidebarItems = [
   { label: 'Dashboard', href: '/livreur/dashboard', icon: 'dashboard' },
@@ -11,6 +14,21 @@ const sidebarItems = [
 ];
 
 export default function LivreurLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  if (loading) return <LoadingPage />;
+
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+
+  if (!isRoleAllowedForPath(user.role, '/livreur')) {
+    router.push(getRoleBasePath(user.role));
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar title="Livreur" titleColor="text-green-400" items={sidebarItems} />

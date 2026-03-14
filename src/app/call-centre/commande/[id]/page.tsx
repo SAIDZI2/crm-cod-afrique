@@ -20,6 +20,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getCommandeById, checkBlacklist, updateCommandeStatut, createAppel, createRappel } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
 import {
@@ -35,9 +36,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-const AGENT_ID = 'a1000000-0000-0000-0000-000000000004';
-
 export default function CommandeDetailPage() {
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const commandeId = params.id as string;

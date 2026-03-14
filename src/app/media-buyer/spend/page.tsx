@@ -30,10 +30,12 @@ import {
 } from '@/components/ui/select';
 import { KpiCard } from '@/components/kpi-card';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getDepenses, getCommandes, getProduits, createDepense } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate } from '@/lib/constants';
 
 export default function SpendPage() {
+  const { user } = useAuth();
   const { data: depensesData, loading: l1, refetch } = useSupabase(() => getDepenses(), []);
   const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
   const { data: produitsData, loading: l3 } = useSupabase(() => getProduits(), []);
@@ -63,7 +65,7 @@ export default function SpendPage() {
     }
     try {
       await createDepense({
-        user_id: 'a1000000-0000-0000-0000-000000000001',
+        user_id: user!.id,
         produit_id: newDepense.produit_id || undefined,
         montant: parseFloat(newDepense.montant),
         date_depense: newDepense.date_depense,
