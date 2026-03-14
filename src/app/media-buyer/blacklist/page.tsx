@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,45 +14,41 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/constants';
-import type { Blacklist } from '@/lib/types';
-
-const initialBlacklist: Blacklist[] = [
-  { id: 'bl1', telephone: '+243 801 123456', motif: 'Numero frauduleux', user_id: 'u1', created_at: '2026-03-01T10:00:00Z' },
-  { id: 'bl2', telephone: '+243 802 234567', motif: 'Commandes multiples non payees', user_id: 'u1', created_at: '2026-03-03T14:30:00Z' },
-  { id: 'bl3', telephone: '+243 803 345678', motif: 'Faux numero', user_id: 'u2', created_at: '2026-03-05T09:15:00Z' },
-  { id: 'bl4', telephone: '+243 804 456789', motif: 'Refus systematique a la livraison', user_id: 'u1', created_at: '2026-03-07T16:45:00Z' },
-  { id: 'bl5', telephone: '+243 805 567890', motif: 'Spam', user_id: 'u3', created_at: '2026-03-09T11:20:00Z' },
-];
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getBlacklist, addToBlacklist } from '@/lib/supabase/queries';
 
 export default function BlacklistPage() {
-  const [blacklist, setBlacklist] = useState<Blacklist[]>(initialBlacklist);
+  const { data: blacklistData, loading, refetch } = useSupabase(() => getBlacklist(), []);
   const [search, setSearch] = useState('');
   const [newTelephone, setNewTelephone] = useState('');
   const [newMotif, setNewMotif] = useState('');
 
-  const filtered = useMemo(() => {
-    return blacklist.filter(
-      (b) =>
-        b.telephone.includes(search) ||
-        (b.motif && b.motif.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [blacklist, search]);
+  if (loading) return <LoadingPage />;
+  const blacklist = blacklistData ?? [];
 
-  function handleAdd() {
+  const filtered = blacklist.filter(
+    (b) =>
+      b.telephone.includes(search) ||
+      (b.motif && b.motif.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  async function handleAdd() {
     if (!newTelephone.trim()) {
       alert('Veuillez entrer un numero de telephone.');
       return;
     }
-    const entry: Blacklist = {
-      id: `bl${Date.now()}`,
-      telephone: newTelephone.trim(),
-      motif: newMotif.trim() || undefined,
-      user_id: 'u1',
-      created_at: new Date().toISOString(),
-    };
-    setBlacklist((prev) => [entry, ...prev]);
-    setNewTelephone('');
-    setNewMotif('');
+    try {
+      await addToBlacklist({
+        telephone: newTelephone.trim(),
+        motif: newMotif.trim() || undefined,
+        user_id: 'a1000000-0000-0000-0000-000000000001',
+      });
+      setNewTelephone('');
+      setNewMotif('');
+      refetch();
+    } catch (err) {
+      alert('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    }
   }
 
   return (

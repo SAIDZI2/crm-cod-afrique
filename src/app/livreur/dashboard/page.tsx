@@ -3,15 +3,31 @@
 import { useMemo } from 'react';
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockTournees, mockTourneeCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getTourneeEnCours, getTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 
-export default function LivreurDashboardPage() {
-  const tourneeActuelle = mockTournees.find(t => t.statut === 'en_cours');
-  const commandes = mockTourneeCommandes;
+const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
 
-  const stats = useMemo(() => {
+export default function LivreurDashboardPage() {
+  const { data: tourneeActuelle, loading: loadingTournee } = useSupabase(
+    () => getTourneeEnCours(LIVREUR_ID),
+    []
+  );
+
+  const tourneeId = tourneeActuelle?.id;
+
+  const { data: rawCommandes, loading: loadingCommandes } = useSupabase(
+    () => (tourneeId ? getTourneeCommandes(tourneeId) : Promise.resolve([])),
+    [tourneeId]
+  );
+
+  if (loadingTournee || loadingCommandes) return <LoadingPage />;
+
+  const commandes = rawCommandes ?? [];
+
+  const stats = (() => {
     const total = commandes.length;
     const livre = commandes.filter(c => c.statut_livraison === 'livre').length;
     const enCours = commandes.filter(c => c.statut_livraison === 'en_cours').length;
@@ -22,9 +38,9 @@ export default function LivreurDashboardPage() {
     const tauxLivraison = total > 0 ? Math.round((livre / total) * 100) : 0;
 
     return { total, livre, enCours, retourne, cashCollecte, tauxLivraison };
-  }, [commandes]);
+  })();
 
-  const alerts = useMemo(() => {
+  const alerts = (() => {
     const items: { type: 'warning' | 'info'; message: string }[] = [];
     const sansAdresse = commandes.filter(
       c => c.commande && (!c.commande.adresse || c.commande.adresse.trim() === '')
@@ -43,7 +59,7 @@ export default function LivreurDashboardPage() {
       items.push({ type: 'info', message: `Excellent taux de livraison: ${stats.tauxLivraison}%` });
     }
     return items;
-  }, [commandes, stats]);
+  })();
 
   return (
     <div className="space-y-6">

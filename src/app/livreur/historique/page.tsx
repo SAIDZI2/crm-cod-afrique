@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { mockTournees, mockTourneeCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getTournees, getAllTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
-import { Calendar, ChevronDown, ChevronUp, Package, TrendingUp } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
+
+const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
 
 const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
   en_preparation: { label: 'En Preparation', bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -17,24 +19,26 @@ const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: s
 };
 
 export default function LivreurHistoriquePage() {
+  const { data: tourneesData, loading: l1 } = useSupabase(() => getTournees(LIVREUR_ID), []);
+  const { data: tcData, loading: l2 } = useSupabase(() => getAllTourneeCommandes(), []);
   const [expandedTournee, setExpandedTournee] = useState<string | null>(null);
 
-  const tournees = mockTournees;
+  if (l1 || l2) return <LoadingPage />;
+  const tournees = tourneesData ?? [];
+  const allTc = tcData ?? [];
 
-  const globalStats = useMemo(() => {
-    const totalColis = mockTourneeCommandes.length;
-    const totalLivres = mockTourneeCommandes.filter(tc => tc.statut_livraison === 'livre').length;
-    const totalRetournes = mockTourneeCommandes.filter(tc => tc.statut_livraison === 'retourne').length;
-    const totalCash = mockTourneeCommandes
-      .filter(tc => tc.montant_collecte != null)
-      .reduce((sum, tc) => sum + (tc.montant_collecte ?? 0), 0);
-    const tauxLivraison = totalColis > 0 ? Math.round((totalLivres / totalColis) * 100) : 0;
+  const totalColis = allTc.length;
+  const totalLivres = allTc.filter(tc => tc.statut_livraison === 'livre').length;
+  const totalRetournes = allTc.filter(tc => tc.statut_livraison === 'retourne').length;
+  const totalCash = allTc
+    .filter(tc => tc.montant_collecte != null)
+    .reduce((sum, tc) => sum + (tc.montant_collecte ?? 0), 0);
+  const tauxLivraison = totalColis > 0 ? Math.round((totalLivres / totalColis) * 100) : 0;
 
-    return { totalColis, totalLivres, totalRetournes, totalCash, tauxLivraison, totalTournees: tournees.length };
-  }, [tournees]);
+  const globalStats = { totalColis, totalLivres, totalRetournes, totalCash, tauxLivraison, totalTournees: tournees.length };
 
   const getTourneeStats = (tourneeId: string) => {
-    const commandes = mockTourneeCommandes.filter(tc => tc.tournee_id === tourneeId);
+    const commandes = allTc.filter(tc => tc.tournee_id === tourneeId);
     const total = commandes.length;
     const livres = commandes.filter(tc => tc.statut_livraison === 'livre').length;
     const retournes = commandes.filter(tc => tc.statut_livraison === 'retourne').length;
@@ -46,7 +50,6 @@ export default function LivreurHistoriquePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Historique des Tournees</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -54,36 +57,14 @@ export default function LivreurHistoriquePage() {
         </p>
       </div>
 
-      {/* Performance Summary */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        <KpiCard
-          label="Total Tournees"
-          value={globalStats.totalTournees}
-          color="border-l-blue-500"
-        />
-        <KpiCard
-          label="Total Colis"
-          value={globalStats.totalColis}
-          color="border-l-indigo-500"
-        />
-        <KpiCard
-          label="Total Livres"
-          value={globalStats.totalLivres}
-          color="border-l-green-500"
-        />
-        <KpiCard
-          label="Taux Livraison"
-          value={`${globalStats.tauxLivraison}%`}
-          color={globalStats.tauxLivraison >= 70 ? 'border-l-green-500' : 'border-l-red-500'}
-        />
-        <KpiCard
-          label="Cash Total"
-          value={formatCurrency(globalStats.totalCash)}
-          color="border-l-emerald-500"
-        />
+        <KpiCard label="Total Tournees" value={globalStats.totalTournees} color="border-l-blue-500" />
+        <KpiCard label="Total Colis" value={globalStats.totalColis} color="border-l-indigo-500" />
+        <KpiCard label="Total Livres" value={globalStats.totalLivres} color="border-l-green-500" />
+        <KpiCard label="Taux Livraison" value={`${globalStats.tauxLivraison}%`} color={globalStats.tauxLivraison >= 70 ? 'border-l-green-500' : 'border-l-red-500'} />
+        <KpiCard label="Cash Total" value={formatCurrency(globalStats.totalCash)} color="border-l-emerald-500" />
       </div>
 
-      {/* Tournee Cards */}
       <div className="space-y-3">
         {tournees.length === 0 ? (
           <Card>
@@ -96,12 +77,11 @@ export default function LivreurHistoriquePage() {
             const stats = getTourneeStats(tournee.id);
             const statutConfig = STATUT_TOURNEE_CONFIG[tournee.statut] ?? STATUT_TOURNEE_CONFIG.en_preparation;
             const isExpanded = expandedTournee === tournee.id;
-            const tauxLivraison = stats.total > 0 ? Math.round((stats.livres / stats.total) * 100) : 0;
+            const tauxLivraisonTournee = stats.total > 0 ? Math.round((stats.livres / stats.total) * 100) : 0;
 
             return (
               <Card key={tournee.id} className="overflow-hidden">
                 <CardContent className="p-0">
-                  {/* Tournee Header */}
                   <button
                     className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
                     onClick={() => setExpandedTournee(isExpanded ? null : tournee.id)}
@@ -123,7 +103,6 @@ export default function LivreurHistoriquePage() {
                       </div>
                     </div>
 
-                    {/* Quick Stats Row */}
                     <div className="grid grid-cols-4 gap-2 text-center">
                       <div>
                         <p className="text-xs text-muted-foreground">Total</p>
@@ -143,26 +122,23 @@ export default function LivreurHistoriquePage() {
                       </div>
                     </div>
 
-                    {/* Mini Progress Bar */}
                     <div className="mt-3">
                       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${tauxLivraison}%` }}
+                          style={{ width: `${tauxLivraisonTournee}%` }}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Taux de livraison: {tauxLivraison}%
+                        Taux de livraison: {tauxLivraisonTournee}%
                       </p>
                     </div>
                   </button>
 
-                  {/* Expanded Details */}
                   {isExpanded && (
                     <div className="border-t px-4 pb-4">
                       <div className="pt-4 space-y-3">
                         <h4 className="text-sm font-semibold text-muted-foreground">Details de la tournee</h4>
-
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
                             <span className="text-muted-foreground">ID Tournee:</span>
@@ -183,9 +159,8 @@ export default function LivreurHistoriquePage() {
                         <Separator />
 
                         <h4 className="text-sm font-semibold text-muted-foreground">Colis de la tournee</h4>
-
                         <div className="space-y-2">
-                          {mockTourneeCommandes
+                          {allTc
                             .filter(tc => tc.tournee_id === tournee.id)
                             .map(tc => {
                               const cmd = tc.commande;

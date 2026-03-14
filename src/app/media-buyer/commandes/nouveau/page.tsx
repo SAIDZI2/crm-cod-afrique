@@ -14,11 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockProduits } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getProduits, createCommande, createCommandeProduits } from '@/lib/supabase/queries';
 import { formatCurrency, VILLES_RDC } from '@/lib/constants';
 
 export default function NouvelleCommandePage() {
   const router = useRouter();
+  const { data: produits, loading } = useSupabase(() => getProduits(), []);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     destinataire_nom: '',
     telephone: '',
@@ -30,10 +33,11 @@ export default function NouvelleCommandePage() {
     remise: 0,
   });
 
-  const selectedProduit = useMemo(
-    () => mockProduits.find((p) => p.id === form.produit_id),
-    [form.produit_id]
-  );
+  if (loading) return <LoadingPage />;
+
+  const produitsList = produits ?? [];
+
+  const selectedProduit = produitsList.find((p) => p.id === form.produit_id);
 
   const sousTotal = selectedProduit ? selectedProduit.prix * form.quantite : 0;
   const total = Math.max(0, sousTotal - form.remise);
@@ -42,16 +46,41 @@ export default function NouvelleCommandePage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.destinataire_nom || !form.telephone || !form.ville || !form.produit_id) {
       alert('Veuillez remplir tous les champs obligatoires.');
       return;
     }
-    alert(
-      `Commande creee avec succes!\n\nDestinataire: ${form.destinataire_nom}\nVille: ${form.ville}\nProduit: ${selectedProduit?.nom}\nTotal: ${formatCurrency(total)}`
-    );
-    router.push('/media-buyer/commandes');
+    try {
+      setSubmitting(true);
+      const commande = await createCommande({
+        destinataire_nom: form.destinataire_nom,
+        telephone: form.telephone,
+        adresse: form.adresse,
+        ville: form.ville,
+        montant_total: total,
+        remise: form.remise,
+        commentaire: form.commentaire || undefined,
+        statut: 'nouveau',
+      });
+      await createCommandeProduits([
+        {
+          commande_id: commande.id,
+          produit_id: form.produit_id,
+          quantite: form.quantite,
+          prix_unitaire: selectedProduit!.prix,
+        },
+      ]);
+      alert(
+        `Commande creee avec succes!\n\nDestinataire: ${form.destinataire_nom}\nVille: ${form.ville}\nProduit: ${selectedProduit?.nom}\nTotal: ${formatCurrency(total)}`
+      );
+      router.push('/media-buyer/commandes');
+    } catch (err) {
+      alert('Erreur lors de la creation de la commande: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -125,7 +154,7 @@ export default function NouvelleCommandePage() {
                   <SelectValue placeholder="Selectionner un produit" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockProduits.map((p) => (
+                  {produitsList.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.nom} - {formatCurrency(p.prix)}
                     </SelectItem>
@@ -193,8 +222,8 @@ export default function NouvelleCommandePage() {
         </Card>
 
         <div className="flex gap-4 mt-6">
-          <Button type="submit" className="flex-1">
-            Creer la Commande
+          <Button type="submit" className="flex-1" disabled={submitting}>
+            {submitting ? 'Creation en cours...' : 'Creer la Commande'}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Annuler

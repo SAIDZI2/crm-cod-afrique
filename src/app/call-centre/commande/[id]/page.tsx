@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { mockCommandes, mockAppels, mockProduits } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandeById, checkBlacklist, updateCommandeStatut, createAppel, createRappel } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
 import {
   Phone,
@@ -34,6 +35,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+const AGENT_ID = 'a1000000-0000-0000-0000-000000000004';
+
 export default function CommandeDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -45,19 +48,12 @@ export default function CommandeDetailPage() {
   const [scriptOpen, setScriptOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
-  const commande = useMemo(() => {
-    return mockCommandes.find((c) => c.id === commandeId);
-  }, [commandeId]);
+  const { data: commande, loading: l1 } = useSupabase(
+    () => getCommandeById(commandeId),
+    [commandeId]
+  );
 
-  const appels = useMemo(() => {
-    return mockAppels.filter((a) => a.commande_id === commandeId);
-  }, [commandeId]);
-
-  const produit = useMemo(() => {
-    if (!commande) return null;
-    const idx = mockCommandes.indexOf(commande) % mockProduits.length;
-    return mockProduits[idx >= 0 ? idx : 0];
-  }, [commande]);
+  if (l1) return <LoadingPage />;
 
   if (!commande) {
     return (
@@ -73,8 +69,8 @@ export default function CommandeDetailPage() {
     );
   }
 
-  // Mock blacklist check
-  const isBlacklisted = false;
+  const appels = commande.appels ?? [];
+  const firstProduct = commande.commande_produits?.[0]?.produit;
 
   const resultatLabels: Record<string, string> = {
     confirme: 'Confirme',
@@ -112,17 +108,6 @@ export default function CommandeDetailPage() {
         </div>
         <StatusBadge statut={commande.statut} />
       </div>
-
-      {/* Blacklist Alert */}
-      {isBlacklisted && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <Ban className="w-5 h-5 text-red-600" />
-          <div>
-            <p className="font-medium text-red-800">Client blackliste</p>
-            <p className="text-sm text-red-600">Ce numero figure dans la liste noire.</p>
-          </div>
-        </div>
-      )}
 
       {/* Split Layout: Client Info + Order Detail */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -190,14 +175,19 @@ export default function CommandeDetailPage() {
 
             <div>
               <p className="text-xs text-muted-foreground mb-2">Produits</p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">{produit?.nom || 'Produit'}</p>
-                    <p className="text-xs text-muted-foreground">Qty: 1</p>
+              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                {commande.commande_produits?.map((cp) => (
+                  <div key={cp.id || cp.produit_id} className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-sm">{cp.produit?.nom || 'Produit'}</p>
+                      <p className="text-xs text-muted-foreground">Qty: {cp.quantite}</p>
+                    </div>
+                    <p className="font-medium">{formatCurrency(cp.prix_unitaire * cp.quantite)}</p>
                   </div>
-                  <p className="font-medium">{formatCurrency(commande.montant_total)}</p>
-                </div>
+                ))}
+                {(!commande.commande_produits || commande.commande_produits.length === 0) && (
+                  <p className="text-sm text-muted-foreground">Aucun produit</p>
+                )}
               </div>
             </div>
 
@@ -383,7 +373,6 @@ export default function CommandeDetailPage() {
         {scriptOpen && (
           <CardContent className="space-y-4">
             <div className="space-y-4">
-              {/* Step 1 */}
               <div className="border rounded-lg p-4 bg-blue-50/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-blue-600">Etape 1</Badge>
@@ -391,12 +380,11 @@ export default function CommandeDetailPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   &quot;Bonjour, je suis [votre nom] de [entreprise]. Je vous appelle concernant
-                  votre commande de {produit?.nom || 'votre produit'}. Est-ce bien{' '}
+                  votre commande de {firstProduct?.nom || 'votre produit'}. Est-ce bien{' '}
                   {commande.destinataire_nom} ?&quot;
                 </p>
               </div>
 
-              {/* Step 2 */}
               <div className="border rounded-lg p-4 bg-green-50/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-green-600">Etape 2</Badge>
@@ -409,7 +397,6 @@ export default function CommandeDetailPage() {
                 </p>
               </div>
 
-              {/* Step 3 */}
               <div className="border rounded-lg p-4 bg-yellow-50/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-yellow-600">Etape 3</Badge>
@@ -421,7 +408,6 @@ export default function CommandeDetailPage() {
                 </p>
               </div>
 
-              {/* Step 4 */}
               <div className="border rounded-lg p-4 bg-purple-50/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-purple-600">Etape 4</Badge>
@@ -434,7 +420,6 @@ export default function CommandeDetailPage() {
                 </p>
               </div>
 
-              {/* Step 5 */}
               <div className="border rounded-lg p-4 bg-emerald-50/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-emerald-600">Etape 5</Badge>

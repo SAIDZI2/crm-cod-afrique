@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -12,106 +11,96 @@ import {
 } from '@/components/ui/table';
 import { BarChart } from '@/components/charts/bar-chart';
 import { LineChart } from '@/components/charts/line-chart';
-import { mockCommandes, mockAppels, mockUsers } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandes, getAppels, getUsersByRole } from '@/lib/supabase/queries';
 
 export default function StatistiquesPage() {
-  // Agent personal stats
-  const agentStats = useMemo(() => {
-    const agents = mockUsers.filter((u) => u.role === 'call_center');
+  const { data: commandesData, loading: l1 } = useSupabase(() => getCommandes(), []);
+  const { data: appelsData, loading: l2 } = useSupabase(() => getAppels(), []);
+  const { data: usersData, loading: l3 } = useSupabase(() => getUsersByRole('call_center'), []);
 
-    return agents.map((agent) => {
-      const agentAppels = mockAppels.filter((a) => a.agent_id === agent.id);
-      const agentCommandes = mockCommandes.filter((c) => c.agent_id === agent.id);
+  if (l1 || l2 || l3) return <LoadingPage />;
+  const allCommandes = commandesData ?? [];
+  const allAppels = appelsData ?? [];
+  const agents = usersData ?? [];
 
-      const confirmes = agentCommandes.filter((c) => c.statut === 'confirme').length;
-      const echoues = agentCommandes.filter((c) => c.statut === 'echoue').length;
-      const reportes = agentCommandes.filter((c) => c.statut === 'reporte').length;
-      const traites = confirmes + echoues + reportes;
-      const tauxConfirmation = traites > 0 ? Math.round((confirmes / traites) * 100) : 0;
+  // Agent stats
+  const agentStats = agents.map((agent) => {
+    const agentAppels = allAppels.filter((a) => a.agent_id === agent.id);
+    const agentCommandes = allCommandes.filter((c) => c.agent_id === agent.id);
 
-      const totalDuree = agentAppels.reduce((acc, a) => acc + a.duree_secondes, 0);
-      const tempsMoyen = agentAppels.length > 0 ? Math.round(totalDuree / agentAppels.length) : 0;
-      const tempsMoyenMin = Math.floor(tempsMoyen / 60);
-      const tempsMoyenSec = tempsMoyen % 60;
+    const confirmes = agentCommandes.filter((c) => c.statut === 'confirme').length;
+    const echoues = agentCommandes.filter((c) => c.statut === 'echoue').length;
+    const reportes = agentCommandes.filter((c) => c.statut === 'reporte').length;
+    const traites = confirmes + echoues + reportes;
+    const tauxConfirmation = traites > 0 ? Math.round((confirmes / traites) * 100) : 0;
 
-      // Appels par heure (simple estimate: total appels / 8h workday)
-      const appelsParHeure = agentAppels.length > 0 ? (agentAppels.length / 8).toFixed(1) : '0';
+    const totalDuree = agentAppels.reduce((acc, a) => acc + a.duree_secondes, 0);
+    const tempsMoyen = agentAppels.length > 0 ? Math.round(totalDuree / agentAppels.length) : 0;
+    const tempsMoyenMin = Math.floor(tempsMoyen / 60);
+    const tempsMoyenSec = tempsMoyen % 60;
 
-      // Best hour
-      const hourCounts: Record<number, number> = {};
-      agentAppels.forEach((a) => {
-        const hour = new Date(a.date_appel).getHours();
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      });
-      const bestHourEntry = Object.entries(hourCounts).sort(([, a], [, b]) => b - a)[0];
-      const meilleureHeure = bestHourEntry ? `${bestHourEntry[0]}h00` : '-';
+    const appelsParHeure = agentAppels.length > 0 ? (agentAppels.length / 8).toFixed(1) : '0';
 
-      // Upsells (mock: 0 for now)
-      const upsells = Math.floor(confirmes * 0.2);
-
-      return {
-        id: agent.id,
-        nom: agent.nom,
-        totalTraites: traites,
-        confirmes,
-        tauxConfirmation,
-        echoues,
-        reportes,
-        upsells,
-        tempsMoyen: `${tempsMoyenMin}m ${String(tempsMoyenSec).padStart(2, '0')}s`,
-        appelsParHeure,
-        meilleureHeure,
-        totalAppels: agentAppels.length,
-      };
+    const hourCounts: Record<number, number> = {};
+    agentAppels.forEach((a) => {
+      const hour = new Date(a.date_appel).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
-  }, []);
+    const bestHourEntry = Object.entries(hourCounts).sort(([, a], [, b]) => b - a)[0];
+    const meilleureHeure = bestHourEntry ? `${bestHourEntry[0]}h00` : '-';
 
-  // Current agent (first call_center user for personal view)
+    const upsells = Math.floor(confirmes * 0.2);
+
+    return {
+      id: agent.id,
+      nom: agent.nom,
+      totalTraites: traites,
+      confirmes,
+      tauxConfirmation,
+      echoues,
+      reportes,
+      upsells,
+      tempsMoyen: `${tempsMoyenMin}m ${String(tempsMoyenSec).padStart(2, '0')}s`,
+      appelsParHeure,
+      meilleureHeure,
+      totalAppels: agentAppels.length,
+    };
+  });
+
   const personalStats = agentStats[0];
 
   // Chart data: confirmes vs echoues vs reportes par jour
-  const barChartData = useMemo(() => {
+  const barChartData = (() => {
     const days: Record<string, { jour: string; confirmes: number; echoues: number; reportes: number }> = {};
-
-    // Generate last 7 days
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const key = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       days[key] = { jour: key, confirmes: 0, echoues: 0, reportes: 0 };
     }
-
-    mockCommandes.forEach((c) => {
-      const dateKey = new Date(c.created_at).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-      });
+    allCommandes.forEach((c) => {
+      const dateKey = new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       if (days[dateKey]) {
         if (c.statut === 'confirme') days[dateKey].confirmes++;
         else if (c.statut === 'echoue') days[dateKey].echoues++;
         else if (c.statut === 'reporte') days[dateKey].reportes++;
       }
     });
-
     return Object.values(days);
-  }, []);
+  })();
 
-  // Line chart data: taux de confirmation sur 7 jours
-  const lineChartData = useMemo(() => {
+  // Line chart data
+  const lineChartData = (() => {
     const days: Record<string, { jour: string; total: number; confirmes: number }> = {};
-
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const key = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       days[key] = { jour: key, total: 0, confirmes: 0 };
     }
-
-    mockCommandes.forEach((c) => {
-      const dateKey = new Date(c.created_at).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-      });
+    allCommandes.forEach((c) => {
+      const dateKey = new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       if (days[dateKey]) {
         if (['confirme', 'echoue', 'reporte'].includes(c.statut)) {
           days[dateKey].total++;
@@ -119,12 +108,11 @@ export default function StatistiquesPage() {
         }
       }
     });
-
     return Object.values(days).map((d) => ({
       jour: d.jour,
       taux: d.total > 0 ? Math.round((d.confirmes / d.total) * 100) : 0,
     }));
-  }, []);
+  })();
 
   return (
     <div className="space-y-6">
@@ -150,10 +138,7 @@ export default function StatistiquesPage() {
                 <p className="text-xs text-muted-foreground">Confirmes</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <p className="text-2xl font-bold">{personalStats.tauxConfirmation}%</p>
-                </div>
-                {/* Progress bar gauge */}
+                <p className="text-2xl font-bold">{personalStats.tauxConfirmation}%</p>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                   <div
                     className={`h-2 rounded-full ${
@@ -197,7 +182,7 @@ export default function StatistiquesPage() {
         </Card>
       )}
 
-      {/* Team Comparison Table (supervisor view) */}
+      {/* Team Comparison Table */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Comparaison Equipe</CardTitle>

@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
-import { mockCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandeById } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime, STATUT_CONFIG } from '@/lib/constants';
 import type { StatutCommande } from '@/lib/types';
 
@@ -22,7 +22,9 @@ export default function CommandeDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const commande = useMemo(() => mockCommandes.find((c) => c.id === id), [id]);
+  const { data: commande, loading } = useSupabase(() => getCommandeById(id), [id]);
+
+  if (loading) return <LoadingPage />;
 
   if (!commande) {
     return (

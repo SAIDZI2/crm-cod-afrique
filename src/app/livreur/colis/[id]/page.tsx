@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { StatusBadge } from '@/components/status-badge';
-import { mockTourneeCommandes, mockProduits } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getAllTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import {
@@ -27,10 +28,12 @@ export default function LivreurColisDetailPage() {
   const [motifRetour, setMotifRetour] = useState<MotifRetour | ''>('');
   const [noteAction, setNoteAction] = useState('');
 
-  const tc = useMemo(() => {
-    return mockTourneeCommandes.find(t => t.commande_id === commandeId);
-  }, [commandeId]);
+  const { data: tcData, loading } = useSupabase(() => getAllTourneeCommandes(), []);
 
+  if (loading) return <LoadingPage />;
+  const allTc = tcData ?? [];
+
+  const tc = allTc.find(t => t.commande_id === commandeId);
   const commande = tc?.commande;
 
   const mapStatutToCommande = (statut: StatutLivraison) => {
@@ -61,7 +64,6 @@ export default function LivreurColisDetailPage() {
   }
 
   const handleConfirm = () => {
-    // In a real app, this would call an API
     setAction('none');
     setMontantCollecte('');
     setMotifRetour('');
@@ -70,13 +72,11 @@ export default function LivreurColisDetailPage() {
 
   return (
     <div className="space-y-4 max-w-lg mx-auto">
-      {/* Back Button */}
       <Button variant="outline" onClick={() => router.back()} className="min-h-12">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Retour a la tournee
       </Button>
 
-      {/* Status Header */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -86,7 +86,6 @@ export default function LivreurColisDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Client Info */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -96,7 +95,6 @@ export default function LivreurColisDetailPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xl font-bold">{commande.destinataire_nom}</p>
-
           <a
             href={`tel:${commande.telephone}`}
             className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg text-blue-700 min-h-12"
@@ -104,7 +102,6 @@ export default function LivreurColisDetailPage() {
             <Phone className="w-5 h-5" />
             <span className="text-lg font-medium">{commande.telephone}</span>
           </a>
-
           <div className="flex items-start gap-2 text-sm">
             <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
             <div>
@@ -115,7 +112,6 @@ export default function LivreurColisDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Products & Amount */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Commande</CardTitle>
@@ -125,23 +121,18 @@ export default function LivreurColisDetailPage() {
             <Package className="w-4 h-4 text-muted-foreground" />
             <span>Colis #{tc.ordre} — Commande #{commande.id}</span>
           </div>
-
           {commande.code_suivi && (
             <div className="flex items-center gap-2 text-sm">
               <Hash className="w-4 h-4 text-muted-foreground" />
               <span>Suivi: {commande.code_suivi}</span>
             </div>
           )}
-
           {commande.remise > 0 && (
             <p className="text-sm text-muted-foreground">
               Remise: -{formatCurrency(commande.remise)}
             </p>
           )}
-
           <Separator />
-
-          {/* Amount in VERY LARGE text */}
           <div className="text-center py-4">
             <p className="text-sm text-muted-foreground mb-1">Montant a collecter</p>
             <p className="text-4xl font-bold text-green-700">
@@ -151,7 +142,6 @@ export default function LivreurColisDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Notes from Call Centre */}
       {commande.commentaire && (
         <Card>
           <CardHeader className="pb-2">
@@ -168,7 +158,6 @@ export default function LivreurColisDetailPage() {
         </Card>
       )}
 
-      {/* History */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -196,7 +185,6 @@ export default function LivreurColisDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       {tc.statut_livraison === 'en_cours' && action === 'none' && (
         <div className="space-y-2">
           <Button
@@ -209,7 +197,6 @@ export default function LivreurColisDetailPage() {
             <CheckCircle className="w-6 h-6 mr-2" />
             Livre
           </Button>
-
           <div className="grid grid-cols-2 gap-2">
             {MOTIFS_RETOUR.slice(0, 4).map(motif => (
               <Button
@@ -226,7 +213,6 @@ export default function LivreurColisDetailPage() {
               </Button>
             ))}
           </div>
-
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
@@ -248,7 +234,6 @@ export default function LivreurColisDetailPage() {
         </div>
       )}
 
-      {/* Livre Confirmation */}
       {action === 'livre' && (
         <Card className="border-green-300 bg-green-50">
           <CardContent className="p-4 space-y-3">
@@ -269,10 +254,7 @@ export default function LivreurColisDetailPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button
-                className="flex-1 min-h-12 bg-green-600 hover:bg-green-700 text-white text-base"
-                onClick={handleConfirm}
-              >
+              <Button className="flex-1 min-h-12 bg-green-600 hover:bg-green-700 text-white text-base" onClick={handleConfirm}>
                 Confirmer
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>
@@ -283,7 +265,6 @@ export default function LivreurColisDetailPage() {
         </Card>
       )}
 
-      {/* Retour Confirmation */}
       {action === 'retour' && (
         <Card className="border-red-300 bg-red-50">
           <CardContent className="p-4 space-y-3">
@@ -293,18 +274,10 @@ export default function LivreurColisDetailPage() {
             </p>
             <div>
               <Label className="text-sm font-medium">Note (optionnel)</Label>
-              <Textarea
-                value={noteAction}
-                onChange={e => setNoteAction(e.target.value)}
-                className="mt-1 min-h-20"
-                placeholder="Details supplementaires..."
-              />
+              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Details supplementaires..." />
             </div>
             <div className="flex gap-2">
-              <Button
-                className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white"
-                onClick={handleConfirm}
-              >
+              <Button className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white" onClick={handleConfirm}>
                 Confirmer retour
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>
@@ -315,25 +288,16 @@ export default function LivreurColisDetailPage() {
         </Card>
       )}
 
-      {/* Reporter Confirmation */}
       {action === 'reporter' && (
         <Card className="border-orange-300 bg-orange-50">
           <CardContent className="p-4 space-y-3">
             <h3 className="font-bold text-orange-800 text-lg">Reporter a demain</h3>
             <div>
               <Label className="text-sm font-medium">Raison (optionnel)</Label>
-              <Textarea
-                value={noteAction}
-                onChange={e => setNoteAction(e.target.value)}
-                className="mt-1 min-h-20"
-                placeholder="Pourquoi reporter..."
-              />
+              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Pourquoi reporter..." />
             </div>
             <div className="flex gap-2">
-              <Button
-                className="flex-1 min-h-12 bg-orange-600 hover:bg-orange-700 text-white"
-                onClick={handleConfirm}
-              >
+              <Button className="flex-1 min-h-12 bg-orange-600 hover:bg-orange-700 text-white" onClick={handleConfirm}>
                 Confirmer report
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>
@@ -344,25 +308,16 @@ export default function LivreurColisDetailPage() {
         </Card>
       )}
 
-      {/* Signaler Probleme */}
       {action === 'probleme' && (
         <Card className="border-yellow-300 bg-yellow-50">
           <CardContent className="p-4 space-y-3">
             <h3 className="font-bold text-yellow-800 text-lg">Signaler un probleme</h3>
             <div>
               <Label className="text-sm font-medium">Description du probleme</Label>
-              <Textarea
-                value={noteAction}
-                onChange={e => setNoteAction(e.target.value)}
-                className="mt-1 min-h-24"
-                placeholder="Decrivez le probleme..."
-              />
+              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-24" placeholder="Decrivez le probleme..." />
             </div>
             <div className="flex gap-2">
-              <Button
-                className="flex-1 min-h-12 bg-yellow-600 hover:bg-yellow-700 text-white"
-                onClick={handleConfirm}
-              >
+              <Button className="flex-1 min-h-12 bg-yellow-600 hover:bg-yellow-700 text-white" onClick={handleConfirm}>
                 Envoyer
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>

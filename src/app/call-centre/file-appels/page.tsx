@@ -22,7 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockCommandes, mockRappels, mockProduits } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandes, getRappels, getProduits } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 import { VILLES_RDC } from '@/lib/constants';
 import { Phone, FileText } from 'lucide-react';
@@ -47,138 +48,71 @@ function getTimeDiffMinutes(dateStr: string): number {
 }
 
 export default function FileAppelsPage() {
+  const { data: commandesData, loading: l1 } = useSupabase(() => getCommandes(), []);
+  const { data: rappelsData, loading: l2 } = useSupabase(() => getRappels(), []);
+  const { data: produitsData, loading: l3 } = useSupabase(() => getProduits(), []);
+
   const [statusFilter, setStatusFilter] = useState<string>('tous');
   const [search, setSearch] = useState('');
   const [productFilter, setProductFilter] = useState<string>('tous');
   const [cityFilter, setCityFilter] = useState<string>('tous');
 
-  const queueItems = useMemo<QueueItem[]>(() => {
-    // Get commandes with statut nouveau or reporte
-    const commandesFiltrees = mockCommandes.filter(
-      (c) => c.statut === 'nouveau' || c.statut === 'reporte'
-    );
+  if (l1 || l2 || l3) return <LoadingPage />;
+  const allCommandes = commandesData ?? [];
+  const rappels = rappelsData ?? [];
+  const produits = produitsData ?? [];
 
-    // Get overdue rappels (commande IDs)
-    const overdueRappelCommandeIds = new Set(
-      mockRappels
-        .filter((r) => r.statut === 'en_attente' && new Date(r.date_rappel) < new Date())
-        .map((r) => r.commande_id)
-    );
+  // Build queue items
+  const commandesFiltrees = allCommandes.filter(
+    (c) => c.statut === 'nouveau' || c.statut === 'reporte'
+  );
 
-    // Get scheduled callbacks today (not overdue)
-    const scheduledTodayCommandeIds = new Set(
-      mockRappels
-        .filter((r) => {
-          const rappelDate = new Date(r.date_rappel);
-          const now = new Date();
-          return (
-            r.statut === 'en_attente' &&
-            rappelDate >= now &&
-            rappelDate.toDateString() === now.toDateString()
-          );
-        })
-        .map((r) => r.commande_id)
-    );
+  const overdueRappelCommandeIds = new Set(
+    rappels
+      .filter((r) => r.statut === 'en_attente' && new Date(r.date_rappel) < new Date())
+      .map((r) => r.commande_id)
+  );
 
-    const items: QueueItem[] = commandesFiltrees.map((commande) => {
-      // Priority 1: overdue rappels
-      if (overdueRappelCommandeIds.has(commande.id)) {
-        return {
-          commande,
-          priority: 1,
-          priorityLabel: 'Urgent',
-          priorityColor: 'bg-red-100 text-red-700 border-red-200',
-        };
-      }
+  const scheduledTodayCommandeIds = new Set(
+    rappels
+      .filter((r) => {
+        const rappelDate = new Date(r.date_rappel);
+        const now = new Date();
+        return (
+          r.statut === 'en_attente' &&
+          rappelDate >= now &&
+          rappelDate.toDateString() === now.toDateString()
+        );
+      })
+      .map((r) => r.commande_id)
+  );
 
-      // Priority 5: scheduled callbacks today
-      if (scheduledTodayCommandeIds.has(commande.id)) {
-        return {
-          commande,
-          priority: 5,
-          priorityLabel: 'Rappel',
-          priorityColor: 'bg-purple-100 text-purple-700 border-purple-200',
-        };
-      }
+  const queueItems: QueueItem[] = commandesFiltrees.map((commande) => {
+    if (overdueRappelCommandeIds.has(commande.id)) {
+      return { commande, priority: 1, priorityLabel: 'Urgent', priorityColor: 'bg-red-100 text-red-700 border-red-200' };
+    }
+    if (scheduledTodayCommandeIds.has(commande.id)) {
+      return { commande, priority: 5, priorityLabel: 'Rappel', priorityColor: 'bg-purple-100 text-purple-700 border-purple-200' };
+    }
+    if (commande.statut === 'nouveau') {
+      const ageMinutes = getTimeDiffMinutes(commande.created_at);
+      if (ageMinutes < 30) return { commande, priority: 2, priorityLabel: 'Haute', priorityColor: 'bg-orange-100 text-orange-700 border-orange-200' };
+      if (ageMinutes < 120) return { commande, priority: 3, priorityLabel: 'Normale', priorityColor: 'bg-blue-100 text-blue-700 border-blue-200' };
+      return { commande, priority: 4, priorityLabel: 'Basse', priorityColor: 'bg-gray-100 text-gray-700 border-gray-200' };
+    }
+    return { commande, priority: 4, priorityLabel: 'Basse', priorityColor: 'bg-gray-100 text-gray-700 border-gray-200' };
+  }).sort((a, b) => a.priority - b.priority);
 
-      // For new leads, calculate age
-      if (commande.statut === 'nouveau') {
-        const ageMinutes = getTimeDiffMinutes(commande.created_at);
-
-        if (ageMinutes < 30) {
-          return {
-            commande,
-            priority: 2,
-            priorityLabel: 'Haute',
-            priorityColor: 'bg-orange-100 text-orange-700 border-orange-200',
-          };
-        }
-        if (ageMinutes < 120) {
-          return {
-            commande,
-            priority: 3,
-            priorityLabel: 'Normale',
-            priorityColor: 'bg-blue-100 text-blue-700 border-blue-200',
-          };
-        }
-        return {
-          commande,
-          priority: 4,
-          priorityLabel: 'Basse',
-          priorityColor: 'bg-gray-100 text-gray-700 border-gray-200',
-        };
-      }
-
-      // Reporte (default)
-      return {
-        commande,
-        priority: 4,
-        priorityLabel: 'Basse',
-        priorityColor: 'bg-gray-100 text-gray-700 border-gray-200',
-      };
-    });
-
-    return items.sort((a, b) => a.priority - b.priority);
-  }, []);
-
-  // Count tentatives from mock appels
-  const tentativesMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    // We use a simple heuristic: check mockAppels for each commande
-    // Since mockAppels is imported from mock-data
-    return map;
-  }, []);
-
-  const filteredItems = useMemo(() => {
-    return queueItems.filter((item) => {
-      const c = item.commande;
-
-      // Status filter
-      if (statusFilter !== 'tous' && c.statut !== statusFilter) return false;
-
-      // Search filter
-      if (search) {
-        const s = search.toLowerCase();
-        if (
-          !c.destinataire_nom.toLowerCase().includes(s) &&
-          !c.telephone.includes(s) &&
-          !c.id.toLowerCase().includes(s)
-        )
-          return false;
-      }
-
-      // Product filter (we match by checking the montant or source as we don't have product directly on commande)
-      if (productFilter !== 'tous') {
-        // For mock purposes, we check if the commande source contains the product
-        // In real app, this would filter by produit_id
-      }
-
-      // City filter
-      if (cityFilter !== 'tous' && c.ville !== cityFilter) return false;
-
-      return true;
-    });
-  }, [queueItems, statusFilter, search, productFilter, cityFilter]);
+  const filteredItems = queueItems.filter((item) => {
+    const c = item.commande;
+    if (statusFilter !== 'tous' && c.statut !== statusFilter) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      if (!c.destinataire_nom.toLowerCase().includes(s) && !c.telephone.includes(s) && !c.id.toLowerCase().includes(s)) return false;
+    }
+    if (cityFilter !== 'tous' && c.ville !== cityFilter) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -225,7 +159,7 @@ export default function FileAppelsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tous">Tous les produits</SelectItem>
-                  {mockProduits.map((p) => (
+                  {produits.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.nom}
                     </SelectItem>
@@ -270,17 +204,14 @@ export default function FileAppelsPage() {
                 <TableHead>Produit</TableHead>
                 <TableHead>Ville</TableHead>
                 <TableHead>Montant</TableHead>
-                <TableHead>Tentatives</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredItems.map((item) => {
-                const c = item.commande;
-                // Derive product name from source or use a placeholder
-                const produitIndex = mockCommandes.indexOf(c) % mockProduits.length;
-                const produit = mockProduits[produitIndex >= 0 ? produitIndex : 0];
+                const c = item.commande as typeof allCommandes[0];
+                const firstProduct = c.commande_produits?.[0]?.produit;
 
                 return (
                   <TableRow key={c.id} className={item.priority === 1 ? 'bg-red-50' : ''}>
@@ -297,12 +228,9 @@ export default function FileAppelsPage() {
                     </TableCell>
                     <TableCell className="font-medium">{c.destinataire_nom}</TableCell>
                     <TableCell className="text-sm font-mono">{maskPhone(c.telephone)}</TableCell>
-                    <TableCell className="text-sm">{produit?.nom || '-'}</TableCell>
+                    <TableCell className="text-sm">{firstProduct?.nom || '-'}</TableCell>
                     <TableCell>{c.ville}</TableCell>
                     <TableCell className="font-medium">{formatCurrency(c.montant_total)}</TableCell>
-                    <TableCell className="text-center">
-                      {tentativesMap[c.id] || 0}
-                    </TableCell>
                     <TableCell>
                       <StatusBadge statut={c.statut} />
                     </TableCell>
@@ -327,7 +255,7 @@ export default function FileAppelsPage() {
               })}
               {filteredItems.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Aucun lead dans la file d&apos;attente
                   </TableCell>
                 </TableRow>

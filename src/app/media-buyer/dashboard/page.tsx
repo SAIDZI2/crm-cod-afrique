@@ -5,51 +5,61 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/kpi-card';
 import { DonutChart } from '@/components/charts/donut-chart';
 import { LineChart } from '@/components/charts/line-chart';
-import { mockKpis, mockCommandes, mockCommissions, mockDepenses } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandesKpis, getCommandes, getCommissions, getDepenses } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 
 export default function MediaBuyerDashboard() {
+  const { data: kpis, loading: loadingKpis } = useSupabase(() => getCommandesKpis(), []);
+  const { data: commandes, loading: loadingCommandes } = useSupabase(() => getCommandes(), []);
+  const { data: commissions, loading: loadingCommissions } = useSupabase(() => getCommissions(), []);
+  const { data: depenses, loading: loadingDepenses } = useSupabase(() => getDepenses(), []);
+
+  if (loadingKpis || loadingCommandes || loadingCommissions || loadingDepenses) return <LoadingPage />;
+
+  const k = kpis ?? { total: 0, nouveau: 0, confirme: 0, en_preparation: 0, expedie: 0, livre: 0, echoue: 0, reporte: 0, en_retour: 0, retourne: 0 };
+  const commandesList = commandes ?? [];
+  const commissionsList = commissions ?? [];
+  const depensesList = depenses ?? [];
+
   const kpiCards = [
-    { label: 'Leads Crees', value: mockKpis.total, color: 'border-orange-500' },
-    { label: 'Traites', value: mockKpis.total - mockKpis.nouveau, color: 'border-green-500' },
-    { label: 'Nouveaux', value: mockKpis.nouveau, color: 'border-blue-500' },
-    { label: 'Confirmes', value: mockKpis.confirme, color: 'border-green-500' },
-    { label: 'En Preparation', value: mockKpis.en_preparation, color: 'border-yellow-500' },
-    { label: 'Expedies', value: mockKpis.expedie, color: 'border-indigo-500' },
-    { label: 'Echoues', value: mockKpis.echoue, color: 'border-red-500' },
-    { label: 'Reportes', value: mockKpis.reporte, color: 'border-purple-500' },
-    { label: 'En Retour', value: mockKpis.en_retour, color: 'border-orange-500' },
-    { label: 'Retournes', value: mockKpis.retourne, color: 'border-gray-500' },
-    { label: 'Livres', value: mockKpis.livre, color: 'border-emerald-500' },
+    { label: 'Leads Crees', value: k.total, color: 'border-orange-500' },
+    { label: 'Traites', value: k.total - k.nouveau, color: 'border-green-500' },
+    { label: 'Nouveaux', value: k.nouveau, color: 'border-blue-500' },
+    { label: 'Confirmes', value: k.confirme, color: 'border-green-500' },
+    { label: 'En Preparation', value: k.en_preparation, color: 'border-yellow-500' },
+    { label: 'Expedies', value: k.expedie, color: 'border-indigo-500' },
+    { label: 'Echoues', value: k.echoue, color: 'border-red-500' },
+    { label: 'Reportes', value: k.reporte, color: 'border-purple-500' },
+    { label: 'En Retour', value: k.en_retour, color: 'border-orange-500' },
+    { label: 'Retournes', value: k.retourne, color: 'border-gray-500' },
+    { label: 'Livres', value: k.livre, color: 'border-emerald-500' },
   ];
 
-  const enCours = mockKpis.confirme + mockKpis.en_preparation + mockKpis.expedie;
-  const tauxLivraison = mockKpis.total > 0 ? ((mockKpis.livre / mockKpis.total) * 100).toFixed(1) : '0';
+  const enCours = k.confirme + k.en_preparation + k.expedie;
+  const tauxLivraison = k.total > 0 ? ((k.livre / k.total) * 100).toFixed(1) : '0';
 
-  const totalDu = useMemo(() => mockCommissions.reduce((sum, c) => sum + c.montant, 0), []);
-  const totalPaye = useMemo(
-    () => mockCommissions.filter((c) => c.statut === 'payee').reduce((sum, c) => sum + c.montant, 0),
-    []
-  );
+  const totalDu = commissionsList.reduce((sum, c) => sum + c.montant, 0);
+  const totalPaye = commissionsList.filter((c) => c.statut === 'payee').reduce((sum, c) => sum + c.montant, 0);
   const resteAPayer = totalDu - totalPaye;
 
-  const totalDepenses = useMemo(() => mockDepenses.reduce((sum, d) => sum + d.montant, 0), []);
+  const totalDepenses = depensesList.reduce((sum, d) => sum + d.montant, 0);
 
   const donutData = [
-    { name: 'Nouveaux', value: mockKpis.nouveau, color: '#3b82f6' },
-    { name: 'Confirmes', value: mockKpis.confirme, color: '#22c55e' },
-    { name: 'En Preparation', value: mockKpis.en_preparation, color: '#eab308' },
-    { name: 'Expedies', value: mockKpis.expedie, color: '#6366f1' },
-    { name: 'Livres', value: mockKpis.livre, color: '#10b981' },
-    { name: 'Echoues', value: mockKpis.echoue, color: '#ef4444' },
-    { name: 'Reportes', value: mockKpis.reporte, color: '#a855f7' },
-    { name: 'En Retour', value: mockKpis.en_retour, color: '#f97316' },
-    { name: 'Retournes', value: mockKpis.retourne, color: '#6b7280' },
+    { name: 'Nouveaux', value: k.nouveau, color: '#3b82f6' },
+    { name: 'Confirmes', value: k.confirme, color: '#22c55e' },
+    { name: 'En Preparation', value: k.en_preparation, color: '#eab308' },
+    { name: 'Expedies', value: k.expedie, color: '#6366f1' },
+    { name: 'Livres', value: k.livre, color: '#10b981' },
+    { name: 'Echoues', value: k.echoue, color: '#ef4444' },
+    { name: 'Reportes', value: k.reporte, color: '#a855f7' },
+    { name: 'En Retour', value: k.en_retour, color: '#f97316' },
+    { name: 'Retournes', value: k.retourne, color: '#6b7280' },
   ].filter((d) => d.value > 0);
 
-  const lineData = useMemo(() => {
+  const lineData = (() => {
     const grouped: Record<string, { leads: number; livres: number }> = {};
-    mockCommandes.forEach((c) => {
+    commandesList.forEach((c) => {
       const day = c.created_at.substring(0, 10);
       if (!grouped[day]) grouped[day] = { leads: 0, livres: 0 };
       grouped[day].leads++;
@@ -58,7 +68,7 @@ export default function MediaBuyerDashboard() {
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, data]) => ({ date, leads: data.leads, livres: data.livres }));
-  }, []);
+  })();
 
   return (
     <div className="space-y-6">
@@ -80,7 +90,7 @@ export default function MediaBuyerDashboard() {
           <CardContent className="space-y-3">
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Leads Total</span>
-              <span className="font-semibold">{mockKpis.total}</span>
+              <span className="font-semibold">{k.total}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">En Cours</span>
@@ -89,7 +99,7 @@ export default function MediaBuyerDashboard() {
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Livres / Total</span>
               <span className="font-semibold">
-                {mockKpis.livre} / {mockKpis.total}
+                {k.livre} / {k.total}
               </span>
             </div>
             <div className="flex justify-between">

@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockProduits } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getProduits } from '@/lib/supabase/queries';
 import { formatCurrency, CATEGORIES_PRODUITS } from '@/lib/constants';
 import type { StatutStock } from '@/lib/types';
 
@@ -22,18 +23,21 @@ const stockBadgeConfig: Record<StatutStock, { label: string; className: string }
 };
 
 export default function OffresPage() {
+  const { data: produits, loading } = useSupabase(() => getProduits(), []);
   const [search, setSearch] = useState('');
   const [categorie, setCategorie] = useState('toutes');
 
-  const filtered = useMemo(() => {
-    return mockProduits.filter((p) => {
-      const matchSearch =
-        p.nom.toLowerCase().includes(search.toLowerCase()) ||
-        p.sku.toLowerCase().includes(search.toLowerCase());
-      const matchCategorie = categorie === 'toutes' || p.categorie === categorie;
-      return matchSearch && matchCategorie;
-    });
-  }, [search, categorie]);
+  if (loading) return <LoadingPage />;
+
+  const produitsList = produits ?? [];
+
+  const filtered = produitsList.filter((p) => {
+    const matchSearch =
+      p.nom.toLowerCase().includes(search.toLowerCase()) ||
+      p.sku.toLowerCase().includes(search.toLowerCase());
+    const matchCategorie = categorie === 'toutes' || p.categorie === categorie;
+    return matchSearch && matchCategorie;
+  });
 
   return (
     <div className="space-y-6">

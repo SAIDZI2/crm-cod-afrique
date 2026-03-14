@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -11,32 +10,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockUsers, mockCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getSubAffiliates, getCommandes } from '@/lib/supabase/queries';
 import { formatDate } from '@/lib/constants';
 
-export default function EquipePage() {
-  const currentUserId = 'u1';
+const CURRENT_USER_ID = 'a1000000-0000-0000-0000-000000000001';
 
-  const teamMembers = useMemo(
-    () => mockUsers.filter((u) => u.parent_id === currentUserId),
+export default function EquipePage() {
+  const { data: membersData, loading: l1 } = useSupabase(
+    () => getSubAffiliates(CURRENT_USER_ID),
     []
   );
+  const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
 
-  const [members, setMembers] = useState(teamMembers);
+  if (l1 || l2) return <LoadingPage />;
+  const members = membersData ?? [];
+  const commandes = commandesData ?? [];
 
-  function toggleActif(userId: string) {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === userId ? { ...m, actif: !m.actif } : m))
-    );
-  }
-
-  const memberStats = useMemo(() => {
-    const stats: Record<string, number> = {};
-    mockCommandes.forEach((c) => {
-      stats[c.user_id] = (stats[c.user_id] || 0) + 1;
-    });
-    return stats;
-  }, []);
+  const memberStats: Record<string, number> = {};
+  commandes.forEach((c) => {
+    memberStats[c.user_id] = (memberStats[c.user_id] || 0) + 1;
+  });
 
   return (
     <div className="space-y-6">
@@ -78,8 +72,7 @@ export default function EquipePage() {
                     {memberStats[member.id] || 0}
                   </TableCell>
                   <TableCell>
-                    <button
-                      onClick={() => toggleActif(member.id)}
+                    <span
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                         member.actif ? 'bg-green-500' : 'bg-gray-300'
                       }`}
@@ -89,7 +82,7 @@ export default function EquipePage() {
                           member.actif ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
-                    </button>
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}

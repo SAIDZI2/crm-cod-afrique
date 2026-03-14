@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,44 +11,50 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { KpiCard } from '@/components/kpi-card';
-import { mockUsers, mockCommandes, mockCommissions } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getSubAffiliates, getCommandes, getCommissions } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 
-export default function CommissionsPage() {
-  const currentUserId = 'u1';
+const CURRENT_USER_ID = 'a1000000-0000-0000-0000-000000000001';
 
-  const sousAffilies = useMemo(
-    () => mockUsers.filter((u) => u.parent_id === currentUserId),
+export default function CommissionsPage() {
+  const { data: sousAffiliesData, loading: l1 } = useSupabase(
+    () => getSubAffiliates(CURRENT_USER_ID),
     []
   );
+  const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
+  const { data: commissionsData, loading: l3 } = useSupabase(() => getCommissions(), []);
 
-  const affilieStats = useMemo(() => {
-    return sousAffilies.map((affilie) => {
-      const commandes = mockCommandes.filter((c) => c.user_id === affilie.id);
-      const livrees = commandes.filter((c) => c.statut === 'livre');
-      const commissions = mockCommissions.filter((c) => c.user_id === affilie.id);
-      const totalCommission = commissions.reduce((s, c) => s + c.montant, 0);
-      const aPayer = commissions
-        .filter((c) => c.statut === 'approuvee')
-        .reduce((s, c) => s + c.montant, 0);
-      const enAttente = commissions
-        .filter((c) => c.statut === 'en_attente')
-        .reduce((s, c) => s + c.montant, 0);
-      const paye = commissions
-        .filter((c) => c.statut === 'payee')
-        .reduce((s, c) => s + c.montant, 0);
+  if (l1 || l2 || l3) return <LoadingPage />;
+  const sousAffilies = sousAffiliesData ?? [];
+  const commandes = commandesData ?? [];
+  const commissions = commissionsData ?? [];
 
-      return {
-        ...affilie,
-        totalCommandes: commandes.length,
-        livrees: livrees.length,
-        totalCommission,
-        aPayer,
-        enAttente,
-        paye,
-      };
-    });
-  }, [sousAffilies]);
+  const affilieStats = sousAffilies.map((affilie) => {
+    const affilieCommandes = commandes.filter((c) => c.user_id === affilie.id);
+    const livrees = affilieCommandes.filter((c) => c.statut === 'livre');
+    const affilieCommissions = commissions.filter((c) => c.user_id === affilie.id);
+    const totalCommission = affilieCommissions.reduce((s, c) => s + c.montant, 0);
+    const aPayer = affilieCommissions
+      .filter((c) => c.statut === 'approuvee')
+      .reduce((s, c) => s + c.montant, 0);
+    const enAttente = affilieCommissions
+      .filter((c) => c.statut === 'en_attente')
+      .reduce((s, c) => s + c.montant, 0);
+    const paye = affilieCommissions
+      .filter((c) => c.statut === 'payee')
+      .reduce((s, c) => s + c.montant, 0);
+
+    return {
+      ...affilie,
+      totalCommandes: affilieCommandes.length,
+      livrees: livrees.length,
+      totalCommission,
+      aPayer,
+      enAttente,
+      paye,
+    };
+  });
 
   const totalAPayer = affilieStats.reduce((s, a) => s + a.aPayer, 0);
   const totalEnAttente = affilieStats.reduce((s, a) => s + a.enAttente, 0);

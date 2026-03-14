@@ -20,29 +20,33 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { mockCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, STATUT_CONFIG } from '@/lib/constants';
 import type { StatutCommande } from '@/lib/types';
 
 export default function CommandesPage() {
+  const { data: commandes, loading } = useSupabase(() => getCommandes(), []);
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('tous');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
 
-  const filtered = useMemo(() => {
-    return mockCommandes.filter((c) => {
-      const matchSearch =
-        c.id.toLowerCase().includes(search.toLowerCase()) ||
-        c.destinataire_nom.toLowerCase().includes(search.toLowerCase()) ||
-        c.telephone.includes(search) ||
-        c.ville.toLowerCase().includes(search.toLowerCase());
-      const matchStatut = statutFilter === 'tous' || c.statut === statutFilter;
-      const matchDateDebut = !dateDebut || c.created_at >= dateDebut;
-      const matchDateFin = !dateFin || c.created_at <= dateFin + 'T23:59:59Z';
-      return matchSearch && matchStatut && matchDateDebut && matchDateFin;
-    });
-  }, [search, statutFilter, dateDebut, dateFin]);
+  if (loading) return <LoadingPage />;
+
+  const commandesList = commandes ?? [];
+
+  const filtered = commandesList.filter((c) => {
+    const matchSearch =
+      c.id.toLowerCase().includes(search.toLowerCase()) ||
+      c.destinataire_nom.toLowerCase().includes(search.toLowerCase()) ||
+      c.telephone.includes(search) ||
+      c.ville.toLowerCase().includes(search.toLowerCase());
+    const matchStatut = statutFilter === 'tous' || c.statut === statutFilter;
+    const matchDateDebut = !dateDebut || c.created_at >= dateDebut;
+    const matchDateFin = !dateFin || c.created_at <= dateFin + 'T23:59:59Z';
+    return matchSearch && matchStatut && matchDateDebut && matchDateFin;
+  });
 
   return (
     <div className="space-y-6">

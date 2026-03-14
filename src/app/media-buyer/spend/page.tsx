@@ -29,10 +29,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { KpiCard } from '@/components/kpi-card';
-import { mockDepenses, mockCommandes, mockProduits } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getDepenses, getCommandes, getProduits, createDepense } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate } from '@/lib/constants';
 
 export default function SpendPage() {
+  const { data: depensesData, loading: l1, refetch } = useSupabase(() => getDepenses(), []);
+  const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
+  const { data: produitsData, loading: l3 } = useSupabase(() => getProduits(), []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newDepense, setNewDepense] = useState({
     produit_id: '',
@@ -41,25 +45,37 @@ export default function SpendPage() {
     date_depense: '',
   });
 
-  const totalDepense = useMemo(
-    () => mockDepenses.reduce((sum, d) => sum + d.montant, 0),
-    []
-  );
-  const totalLeads = mockCommandes.length;
-  const totalLivres = mockCommandes.filter((c) => c.statut === 'livre').length;
+  if (l1 || l2 || l3) return <LoadingPage />;
+  const depenses = depensesData ?? [];
+  const commandes = commandesData ?? [];
+  const produits = produitsData ?? [];
+
+  const totalDepense = depenses.reduce((sum, d) => sum + d.montant, 0);
+  const totalLeads = commandes.length;
+  const totalLivres = commandes.filter((c) => c.statut === 'livre').length;
   const cpl = totalLeads > 0 ? totalDepense / totalLeads : 0;
   const cpd = totalLivres > 0 ? totalDepense / totalLivres : 0;
 
-  function handleAddDepense() {
+  async function handleAddDepense() {
     if (!newDepense.montant || !newDepense.date_depense) {
       alert('Veuillez remplir le montant et la date.');
       return;
     }
-    alert(
-      `Depense ajoutee!\nMontant: ${formatCurrency(parseFloat(newDepense.montant))}\nNote: ${newDepense.note}`
-    );
-    setNewDepense({ produit_id: '', montant: '', note: '', date_depense: '' });
-    setDialogOpen(false);
+    try {
+      await createDepense({
+        user_id: 'a1000000-0000-0000-0000-000000000001',
+        produit_id: newDepense.produit_id || undefined,
+        montant: parseFloat(newDepense.montant),
+        date_depense: newDepense.date_depense,
+        note: newDepense.note || undefined,
+      });
+      alert(`Depense ajoutee!`);
+      setNewDepense({ produit_id: '', montant: '', note: '', date_depense: '' });
+      setDialogOpen(false);
+      refetch();
+    } catch (err) {
+      alert('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    }
   }
 
   return (
@@ -87,7 +103,7 @@ export default function SpendPage() {
                     <SelectValue placeholder="Selectionner un produit" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockProduits.map((p) => (
+                    {produits.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nom}
                       </SelectItem>
@@ -171,8 +187,8 @@ export default function SpendPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockDepenses.map((depense) => {
-                const produit = mockProduits.find((p) => p.id === depense.produit_id);
+              {depenses.map((depense) => {
+                const produit = produits.find((p) => p.id === depense.produit_id);
                 return (
                   <TableRow key={depense.id}>
                     <TableCell className="text-sm">{formatDate(depense.date_depense)}</TableCell>

@@ -14,33 +14,44 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockCommandes, mockRappels, mockAppels } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getCommandes, getRappels, getAppels } from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime } from '@/lib/constants';
 import { Phone } from 'lucide-react';
 
 export default function CallCentreDashboard() {
-  const stats = useMemo(() => {
-    const nouveau = mockCommandes.filter((c) => c.statut === 'nouveau').length;
-    const rappelsAujourdhui = mockRappels.filter((r) => r.statut === 'en_attente').length;
-    const confirme = mockCommandes.filter((c) => c.statut === 'confirme').length;
-    const echoue = mockCommandes.filter((c) => c.statut === 'echoue').length;
-    const reporte = mockCommandes.filter((c) => c.statut === 'reporte').length;
+  const { data: commandesData, loading: loadingCommandes } = useSupabase(() => getCommandes(), []);
+  const { data: rappelsData, loading: loadingRappels } = useSupabase(() => getRappels(), []);
+  const { data: appelsData, loading: loadingAppels } = useSupabase(() => getAppels(), []);
+
+  if (loadingCommandes || loadingRappels || loadingAppels) return <LoadingPage />;
+
+  const commandes = commandesData ?? [];
+  const rappels = rappelsData ?? [];
+  const appels = appelsData ?? [];
+
+  const stats = (() => {
+    const nouveau = commandes.filter((c) => c.statut === 'nouveau').length;
+    const rappelsAujourdhui = rappels.filter((r) => r.statut === 'en_attente').length;
+    const confirme = commandes.filter((c) => c.statut === 'confirme').length;
+    const echoue = commandes.filter((c) => c.statut === 'echoue').length;
+    const reporte = commandes.filter((c) => c.statut === 'reporte').length;
     const traites = confirme + echoue + reporte;
     const tauxConfirmation = traites > 0 ? Math.round((confirme / traites) * 100) : 0;
 
     return { nouveau, rappelsAujourdhui, confirme, echoue, reporte, traites, tauxConfirmation };
-  }, []);
+  })();
 
-  const performanceStats = useMemo(() => {
-    const appelsPassés = mockAppels.length;
-    const totalDuree = mockAppels.reduce((acc, a) => acc + a.duree_secondes, 0);
+  const performanceStats = (() => {
+    const appelsPassés = appels.length;
+    const totalDuree = appels.reduce((acc, a) => acc + a.duree_secondes, 0);
     const dureeMoyenne = appelsPassés > 0 ? Math.round(totalDuree / appelsPassés) : 0;
     const minutes = Math.floor(dureeMoyenne / 60);
     const seconds = dureeMoyenne % 60;
 
     // Group calls by hour to find best hour
     const hourCounts: Record<number, number> = {};
-    mockAppels.forEach((a) => {
+    appels.forEach((a) => {
       const hour = new Date(a.date_appel).getHours();
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
@@ -51,14 +62,12 @@ export default function CallCentreDashboard() {
       dureeMoyenne: `${minutes}m ${String(seconds).padStart(2, '0')}s`,
       meilleureHeure: bestHour ? `${bestHour[0]}h00` : '-',
     };
-  }, []);
+  })();
 
-  const leadsUrgents = useMemo(() => {
-    return mockCommandes
-      .filter((c) => c.statut === 'nouveau')
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .slice(0, 5);
-  }, []);
+  const leadsUrgents = commandes
+    .filter((c) => c.statut === 'nouveau')
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">

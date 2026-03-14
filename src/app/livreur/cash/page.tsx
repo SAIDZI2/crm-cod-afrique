@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,42 +15,45 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
-import { mockTourneeCommandes, mockRemisesCash } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getAllTourneeCommandes, getRemisesCash } from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime } from '@/lib/constants';
 import { Banknote, ClipboardCheck, AlertTriangle } from 'lucide-react';
 
+const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
+
 export default function LivreurCashPage() {
+  const { data: tcData, loading: l1 } = useSupabase(() => getAllTourneeCommandes(), []);
+  const { data: remisesData, loading: l2 } = useSupabase(() => getRemisesCash(LIVREUR_ID), []);
   const [showCloture, setShowCloture] = useState(false);
   const [showRemise, setShowRemise] = useState(false);
   const [montantRemise, setMontantRemise] = useState('');
 
-  const livres = useMemo(
-    () => mockTourneeCommandes.filter(tc => tc.statut_livraison === 'livre'),
-    []
+  if (l1 || l2) return <LoadingPage />;
+  const allTc = tcData ?? [];
+  const remisesCash = remisesData ?? [];
+
+  const livres = allTc.filter(tc => tc.statut_livraison === 'livre');
+
+  const cashTheorique = livres.reduce(
+    (sum, tc) => sum + (tc.commande?.montant_total ?? 0),
+    0
   );
+  const cashCollecte = livres.reduce(
+    (sum, tc) => sum + (tc.montant_collecte ?? 0),
+    0
+  );
+  const ecart = cashTheorique - cashCollecte;
+  const cashDejaRemis = remisesCash.reduce(
+    (sum, r) => sum + r.montant_remis,
+    0
+  );
+  const cashRestant = cashCollecte - cashDejaRemis;
 
-  const stats = useMemo(() => {
-    const cashTheorique = livres.reduce(
-      (sum, tc) => sum + (tc.commande?.montant_total ?? 0),
-      0
-    );
-    const cashCollecte = livres.reduce(
-      (sum, tc) => sum + (tc.montant_collecte ?? 0),
-      0
-    );
-    const ecart = cashTheorique - cashCollecte;
-    const cashDejaRemis = mockRemisesCash.reduce(
-      (sum, r) => sum + r.montant_remis,
-      0
-    );
-    const cashRestant = cashCollecte - cashDejaRemis;
-
-    return { cashTheorique, cashCollecte, ecart, cashDejaRemis, cashRestant };
-  }, [livres]);
+  const stats = { cashTheorique, cashCollecte, ecart, cashDejaRemis, cashRestant };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Gestion du Cash</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -58,41 +61,14 @@ export default function LivreurCashPage() {
         </p>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        <KpiCard
-          label="Cash Theorique Du"
-          value={formatCurrency(stats.cashTheorique)}
-          color="border-l-blue-500"
-          subtitle="Montant attendu"
-        />
-        <KpiCard
-          label="Cash Collecte"
-          value={formatCurrency(stats.cashCollecte)}
-          color="border-l-green-500"
-          subtitle="Reellement encaisse"
-        />
-        <KpiCard
-          label="Ecart"
-          value={formatCurrency(stats.ecart)}
-          color={stats.ecart === 0 ? 'border-l-green-500' : 'border-l-red-500'}
-          subtitle={stats.ecart === 0 ? 'Aucun ecart' : 'A justifier'}
-        />
-        <KpiCard
-          label="Cash Deja Remis"
-          value={formatCurrency(stats.cashDejaRemis)}
-          color="border-l-purple-500"
-          subtitle={`${mockRemisesCash.length} remise(s)`}
-        />
-        <KpiCard
-          label="Cash Restant"
-          value={formatCurrency(stats.cashRestant)}
-          color={stats.cashRestant > 0 ? 'border-l-orange-500' : 'border-l-green-500'}
-          subtitle="A remettre"
-        />
+        <KpiCard label="Cash Theorique Du" value={formatCurrency(stats.cashTheorique)} color="border-l-blue-500" subtitle="Montant attendu" />
+        <KpiCard label="Cash Collecte" value={formatCurrency(stats.cashCollecte)} color="border-l-green-500" subtitle="Reellement encaisse" />
+        <KpiCard label="Ecart" value={formatCurrency(stats.ecart)} color={stats.ecart === 0 ? 'border-l-green-500' : 'border-l-red-500'} subtitle={stats.ecart === 0 ? 'Aucun ecart' : 'A justifier'} />
+        <KpiCard label="Cash Deja Remis" value={formatCurrency(stats.cashDejaRemis)} color="border-l-purple-500" subtitle={`${remisesCash.length} remise(s)`} />
+        <KpiCard label="Cash Restant" value={formatCurrency(stats.cashRestant)} color={stats.cashRestant > 0 ? 'border-l-orange-500' : 'border-l-green-500'} subtitle="A remettre" />
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Dialog open={showCloture} onOpenChange={setShowCloture}>
           <DialogTrigger
@@ -139,10 +115,7 @@ export default function LivreurCashPage() {
                   Un ecart de {formatCurrency(stats.ecart)} a ete detecte.
                 </div>
               )}
-              <Button
-                className="w-full min-h-12 bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => setShowCloture(false)}
-              >
+              <Button className="w-full min-h-12 bg-green-600 hover:bg-green-700 text-white" onClick={() => setShowCloture(false)}>
                 Confirmer la cloture
               </Button>
             </div>
@@ -179,10 +152,7 @@ export default function LivreurCashPage() {
               </div>
               <Button
                 className="w-full min-h-12 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => {
-                  setShowRemise(false);
-                  setMontantRemise('');
-                }}
+                onClick={() => { setShowRemise(false); setMontantRemise(''); }}
                 disabled={!montantRemise || Number(montantRemise) <= 0}
               >
                 Confirmer la remise
@@ -192,7 +162,6 @@ export default function LivreurCashPage() {
         </Dialog>
       </div>
 
-      {/* Detail Table */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Detail des encaissements</CardTitle>
@@ -221,14 +190,14 @@ export default function LivreurCashPage() {
                   livres.map(tc => {
                     const cmd = tc.commande;
                     if (!cmd) return null;
-                    const ecart = cmd.montant_total - (tc.montant_collecte ?? 0);
+                    const ecartItem = cmd.montant_total - (tc.montant_collecte ?? 0);
                     return (
                       <TableRow key={tc.id}>
                         <TableCell className="font-mono text-xs">{cmd.id}</TableCell>
                         <TableCell className="font-medium">{cmd.destinataire_nom}</TableCell>
                         <TableCell className="text-right">{formatCurrency(cmd.montant_total)}</TableCell>
                         <TableCell className="text-right">
-                          <span className={ecart !== 0 ? 'text-red-600 font-medium' : ''}>
+                          <span className={ecartItem !== 0 ? 'text-red-600 font-medium' : ''}>
                             {formatCurrency(tc.montant_collecte ?? 0)}
                           </span>
                         </TableCell>
@@ -239,12 +208,12 @@ export default function LivreurCashPage() {
                           <Badge
                             variant="outline"
                             className={
-                              mockRemisesCash.length > 0
+                              remisesCash.length > 0
                                 ? 'bg-green-100 text-green-700 border-0'
                                 : 'bg-orange-100 text-orange-700 border-0'
                             }
                           >
-                            {mockRemisesCash.length > 0 ? 'Remis' : 'En attente'}
+                            {remisesCash.length > 0 ? 'Remis' : 'En attente'}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -257,14 +226,13 @@ export default function LivreurCashPage() {
         </CardContent>
       </Card>
 
-      {/* Remises History */}
-      {mockRemisesCash.length > 0 && (
+      {remisesCash.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Historique des remises</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {mockRemisesCash.map(r => (
+            {remisesCash.map(r => (
               <div key={r.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="text-sm font-medium">{formatCurrency(r.montant_remis)} remis</p>

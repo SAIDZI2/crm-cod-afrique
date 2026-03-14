@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,14 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
-import { mockTourneeCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getAllTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import { Phone, Package, CheckCircle, RotateCcw, MapPin } from 'lucide-react';
 
+const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
+
 type FilterTab = 'tous' | 'en_cours' | 'livre' | 'retourne';
 
 export default function LivreurTourneePage() {
+  const { data: tcData, loading } = useSupabase(() => getAllTourneeCommandes(), []);
   const [filter, setFilter] = useState<FilterTab>('tous');
   const [expandedLivre, setExpandedLivre] = useState<string | null>(null);
   const [expandedRetour, setExpandedRetour] = useState<string | null>(null);
@@ -24,30 +28,25 @@ export default function LivreurTourneePage() {
   const [motifRetour, setMotifRetour] = useState<MotifRetour | ''>('');
   const [noteRetour, setNoteRetour] = useState('');
 
-  const commandes = mockTourneeCommandes;
+  if (loading) return <LoadingPage />;
+  const commandes = tcData ?? [];
 
-  const filtered = useMemo(() => {
-    if (filter === 'tous') return commandes;
-    return commandes.filter(c => c.statut_livraison === filter);
-  }, [commandes, filter]);
+  const filtered = filter === 'tous' ? commandes : commandes.filter(c => c.statut_livraison === filter);
 
-  const stats = useMemo(() => {
-    const total = commandes.length;
-    const livre = commandes.filter(c => c.statut_livraison === 'livre').length;
-    const cashTotal = commandes
+  const stats = {
+    total: commandes.length,
+    livre: commandes.filter(c => c.statut_livraison === 'livre').length,
+    cashTotal: commandes
       .filter(c => c.montant_collecte != null)
-      .reduce((sum, c) => sum + (c.montant_collecte ?? 0), 0);
-    return { total, livre, cashTotal };
-  }, [commandes]);
+      .reduce((sum, c) => sum + (c.montant_collecte ?? 0), 0),
+  };
 
   const handleConfirmLivre = (id: string) => {
-    // In a real app, this would call an API
     setExpandedLivre(null);
     setMontantCollecte('');
   };
 
   const handleConfirmRetour = (id: string) => {
-    // In a real app, this would call an API
     setExpandedRetour(null);
     setMotifRetour('');
     setNoteRetour('');
@@ -73,7 +72,6 @@ export default function LivreurTourneePage() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Ma Tournee</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -81,7 +79,6 @@ export default function LivreurTourneePage() {
         </p>
       </div>
 
-      {/* Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {filterTabs.map(tab => (
           <Button
@@ -96,7 +93,6 @@ export default function LivreurTourneePage() {
         ))}
       </div>
 
-      {/* Parcel Cards */}
       <div className="space-y-3">
         {filtered.length === 0 && (
           <Card>
@@ -116,7 +112,6 @@ export default function LivreurTourneePage() {
           return (
             <Card key={tc.id} className="overflow-hidden">
               <CardContent className="p-4 space-y-3">
-                {/* Order ID + Status */}
                 <div className="flex items-center justify-between">
                   <Link
                     href={`/livreur/colis/${cmd.id}`}
@@ -127,10 +122,8 @@ export default function LivreurTourneePage() {
                   <StatusBadge statut={mapStatutToCommande(tc.statut_livraison)} />
                 </div>
 
-                {/* Client Name */}
                 <p className="text-lg font-bold">{cmd.destinataire_nom}</p>
 
-                {/* Phone */}
                 <a
                   href={`tel:${cmd.telephone}`}
                   className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
@@ -139,24 +132,20 @@ export default function LivreurTourneePage() {
                   {cmd.telephone}
                 </a>
 
-                {/* Address */}
                 <div className="flex items-start gap-2 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{cmd.adresse}, {cmd.ville}</span>
                 </div>
 
-                {/* Product + Quantity */}
                 <div className="flex items-center gap-2 text-sm">
                   <Package className="w-4 h-4 text-muted-foreground" />
                   <span>Colis #{tc.ordre}</span>
                 </div>
 
-                {/* Amount */}
                 <p className="text-2xl font-bold text-green-700">
                   {formatCurrency(cmd.montant_total)}
                 </p>
 
-                {/* Action Buttons */}
                 {tc.statut_livraison === 'en_cours' && !isLivreExpanded && !isRetourExpanded && (
                   <div className="flex gap-2 pt-2">
                     <Button
@@ -181,17 +170,13 @@ export default function LivreurTourneePage() {
                       Retour
                     </Button>
                     <a href={`tel:${cmd.telephone}`}>
-                      <Button
-                        className="min-h-12 min-w-12"
-                        variant="outline"
-                      >
+                      <Button className="min-h-12 min-w-12" variant="outline">
                         <Phone className="w-5 h-5 text-blue-600" />
                       </Button>
                     </a>
                   </div>
                 )}
 
-                {/* Livre Confirmation */}
                 {isLivreExpanded && (
                   <div className="border-t pt-4 space-y-3 bg-green-50 -mx-4 px-4 pb-4">
                     <h3 className="font-semibold text-green-800">Confirmer la livraison</h3>
@@ -221,18 +206,13 @@ export default function LivreurTourneePage() {
                       >
                         Confirmer livraison
                       </Button>
-                      <Button
-                        variant="outline"
-                        className="min-h-12"
-                        onClick={() => setExpandedLivre(null)}
-                      >
+                      <Button variant="outline" className="min-h-12" onClick={() => setExpandedLivre(null)}>
                         Annuler
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Retour Confirmation */}
                 {isRetourExpanded && (
                   <div className="border-t pt-4 space-y-3 bg-red-50 -mx-4 px-4 pb-4">
                     <h3 className="font-semibold text-red-800">Declarer un retour</h3>
@@ -271,11 +251,7 @@ export default function LivreurTourneePage() {
                       >
                         Confirmer retour
                       </Button>
-                      <Button
-                        variant="outline"
-                        className="min-h-12"
-                        onClick={() => setExpandedRetour(null)}
-                      >
+                      <Button variant="outline" className="min-h-12" onClick={() => setExpandedRetour(null)}>
                         Annuler
                       </Button>
                     </div>

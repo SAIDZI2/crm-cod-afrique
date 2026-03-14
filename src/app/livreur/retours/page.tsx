@@ -1,15 +1,17 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow
 } from '@/components/ui/table';
-import { mockTourneeCommandes } from '@/lib/mock-data';
+import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { getRetours } from '@/lib/supabase/queries';
 import { formatDate, MOTIFS_RETOUR } from '@/lib/constants';
 import { RotateCcw, CheckCircle, XCircle } from 'lucide-react';
+
+const LIVREUR_ID = 'a1000000-0000-0000-0000-000000000006';
 
 const MOTIF_COLORS: Record<string, { bg: string; text: string }> = {
   absent: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -23,19 +25,16 @@ const MOTIF_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export default function LivreurRetoursPage() {
-  const retours = useMemo(
-    () => mockTourneeCommandes.filter(tc => tc.statut_livraison === 'retourne'),
-    []
-  );
+  const { data: retoursData, loading } = useSupabase(() => getRetours(LIVREUR_ID), []);
 
-  const motifStats = useMemo(() => {
-    const counts: Record<string, number> = {};
-    retours.forEach(tc => {
-      const motif = tc.motif_retour ?? 'autre';
-      counts[motif] = (counts[motif] || 0) + 1;
-    });
-    return counts;
-  }, [retours]);
+  if (loading) return <LoadingPage />;
+  const retours = retoursData ?? [];
+
+  const motifStats: Record<string, number> = {};
+  retours.forEach(r => {
+    const motif = r.motif ?? 'autre';
+    motifStats[motif] = (motifStats[motif] || 0) + 1;
+  });
 
   const getMotifLabel = (value: string) => {
     return MOTIFS_RETOUR.find(m => m.value === value)?.label ?? value;
@@ -43,7 +42,6 @@ export default function LivreurRetoursPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Retours</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -51,7 +49,6 @@ export default function LivreurRetoursPage() {
         </p>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border-l-4 border-l-red-500">
           <CardContent className="p-4">
@@ -77,7 +74,6 @@ export default function LivreurRetoursPage() {
         })}
       </div>
 
-      {/* Retours Table */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -92,7 +88,6 @@ export default function LivreurRetoursPage() {
                 <TableRow>
                   <TableHead>ID Commande</TableHead>
                   <TableHead>Client</TableHead>
-                  <TableHead>Produit</TableHead>
                   <TableHead>Motif retour</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-center">Recu au depot</TableHead>
@@ -102,22 +97,21 @@ export default function LivreurRetoursPage() {
               <TableBody>
                 {retours.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Aucun retour enregistre.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  retours.map(tc => {
-                    const cmd = tc.commande;
+                  retours.map(retour => {
+                    const cmd = retour.commande;
                     if (!cmd) return null;
-                    const motif = tc.motif_retour ?? 'autre';
+                    const motif = retour.motif ?? 'autre';
                     const motifColors = MOTIF_COLORS[motif] ?? MOTIF_COLORS.autre;
 
                     return (
-                      <TableRow key={tc.id}>
+                      <TableRow key={retour.id}>
                         <TableCell className="font-mono text-xs">{cmd.id}</TableCell>
                         <TableCell className="font-medium">{cmd.destinataire_nom}</TableCell>
-                        <TableCell className="text-sm">Colis #{tc.ordre}</TableCell>
                         <TableCell>
                           <Badge
                             variant="outline"
@@ -127,18 +121,17 @@ export default function LivreurRetoursPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(cmd.updated_at)}
+                          {formatDate(retour.date_retour)}
                         </TableCell>
                         <TableCell className="text-center">
-                          {/* Mock: alternating for demonstration */}
-                          {Number(tc.ordre) % 2 === 0 ? (
+                          {retour.recu_au_depot ? (
                             <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
                           ) : (
                             <XCircle className="w-5 h-5 text-gray-400 mx-auto" />
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-32 truncate">
-                          {tc.note ?? '-'}
+                          {retour.note ?? '-'}
                         </TableCell>
                       </TableRow>
                     );
