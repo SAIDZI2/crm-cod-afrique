@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getAllTourneeCommandes, updateTourneeCommande, updateCommandeStatut, createRetour } from '@/lib/supabase/queries';
-import { handleDeliveryComplete } from '@/lib/supabase/actions';
+import { getAllTourneeCommandes, updateTourneeCommande, createRetour } from '@/lib/supabase/queries';
+import { handleDeliveryComplete, updateCommandeStatutSecure } from '@/lib/supabase/actions';
 import { formatCurrency, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import { Phone, Package, CheckCircle, RotateCcw, MapPin, Loader2 } from 'lucide-react';
@@ -85,7 +85,7 @@ export default function LivreurTourneePage() {
         recu_au_depot: false,
         date_retour: new Date().toISOString(),
       });
-      await updateCommandeStatut(commandeId, 'retourne');
+      await updateCommandeStatutSecure(commandeId, 'retourne');
       setExpandedRetour(null);
       setMotifRetour('');
       setNoteRetour('');

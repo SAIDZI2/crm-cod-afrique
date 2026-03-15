@@ -12,10 +12,10 @@ import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import {
-  getAllTourneeCommandes, updateTourneeCommande, updateCommandeStatut,
+  getAllTourneeCommandes, updateTourneeCommande,
   createRetour, createAppel
 } from '@/lib/supabase/queries';
-import { handleDeliveryComplete } from '@/lib/supabase/actions';
+import { handleDeliveryComplete, updateCommandeStatutSecure } from '@/lib/supabase/actions';
 import { formatCurrency, formatDateTime, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import {
@@ -116,7 +116,7 @@ export default function LivreurColisDetailPage() {
         recu_au_depot: false,
         date_retour: new Date().toISOString(),
       });
-      await updateCommandeStatut(commande!.id, 'retourne');
+      await updateCommandeStatutSecure(commande!.id, 'retourne');
       resetForm();
       setFeedback({ type: 'success', message: 'Retour declare avec succes.' });
       refetch();
@@ -133,7 +133,7 @@ export default function LivreurColisDetailPage() {
     setFeedback(null);
     try {
       await updateTourneeCommande(tc.id, { statut_livraison: 'reporte', note: noteAction || undefined });
-      await updateCommandeStatut(commande!.id, 'reporte');
+      await updateCommandeStatutSecure(commande!.id, 'reporte');
       resetForm();
       setFeedback({ type: 'success', message: 'Report enregistre avec succes.' });
       refetch();
