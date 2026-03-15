@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { KpiCard } from '@/components/kpi-card';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -59,6 +60,8 @@ export default function BalancePage() {
   const [methode, setMethode] = useState('');
   const [reference, setReference] = useState('');
   const [retraitLoading, setRetraitLoading] = useState(false);
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
 
   if (l1 || l2 || l3) return <LoadingPage />;
   const commissions = commissionsData ?? [];
@@ -78,6 +81,9 @@ export default function BalancePage() {
     .filter((p) => p.statut === 'en_attente' || p.statut === 'approuve')
     .reduce((sum, p) => sum + p.montant, 0);
   const disponible = Math.max(0, approuve - totalRetraitsEnCours);
+
+  const filteredCommissions = filterByDateRange(commissions, 'created_at', dateDebut, dateFin);
+  const filteredPaiements = filterByDateRange(paiements, 'created_at', dateDebut, dateFin);
 
   const handleRetrait = async () => {
     const montant = Number(montantRetrait);
@@ -205,6 +211,12 @@ export default function BalancePage() {
 
       {/* Tabs */}
       <Tabs defaultValue="resume" className="space-y-4">
+        <DateRangeFilter
+          dateDebut={dateDebut}
+          dateFin={dateFin}
+          onDateDebutChange={setDateDebut}
+          onDateFinChange={setDateFin}
+        />
         <TabsList>
           <TabsTrigger value="resume">Résumé</TabsTrigger>
           <TabsTrigger value="commissions">Commissions</TabsTrigger>
@@ -273,7 +285,7 @@ export default function BalancePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {commissions.map((commission) => {
+                  {filteredCommissions.map((commission) => {
                     const config = commissionStatusConfig[commission.statut];
                     return (
                       <TableRow key={commission.id}>
@@ -296,7 +308,7 @@ export default function BalancePage() {
                   })}
                 </TableBody>
               </Table>
-              {commissions.length === 0 && (
+              {filteredCommissions.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   Aucune commission.
                 </div>
@@ -323,7 +335,7 @@ export default function BalancePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paiements.map((p) => {
+                  {filteredPaiements.map((p) => {
                     const config = paiementStatusConfig[p.statut];
                     return (
                       <TableRow key={p.id}>
@@ -349,7 +361,7 @@ export default function BalancePage() {
                   })}
                 </TableBody>
               </Table>
-              {paiements.length === 0 && (
+              {filteredPaiements.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   Aucun retrait effectué.
                 </div>

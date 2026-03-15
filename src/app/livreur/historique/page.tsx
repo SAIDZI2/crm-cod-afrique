@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getTournees, getAllTourneeCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
 import { Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 
 const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
   en_preparation: { label: 'En Préparation', bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -28,20 +29,26 @@ export default function LivreurHistoriquePage() {
     [user?.id]
   );
   const [expandedTournee, setExpandedTournee] = useState<string | null>(null);
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
 
   if (l1 || l2) return <LoadingPage />;
   const tournees = tourneesData ?? [];
   const allTc = tcData ?? [];
 
-  const totalColis = allTc.length;
-  const totalLivres = allTc.filter(tc => tc.statut_livraison === 'livre').length;
-  const totalRetournes = allTc.filter(tc => tc.statut_livraison === 'retourne').length;
-  const totalCash = allTc
+  const filteredTournees = filterByDateRange(tournees, 'date', dateDebut, dateFin);
+  const filteredTourneeIds = new Set(filteredTournees.map(t => t.id));
+  const filteredTc = allTc.filter(tc => filteredTourneeIds.has(tc.tournee_id));
+
+  const totalColis = filteredTc.length;
+  const totalLivres = filteredTc.filter(tc => tc.statut_livraison === 'livre').length;
+  const totalRetournes = filteredTc.filter(tc => tc.statut_livraison === 'retourne').length;
+  const totalCash = filteredTc
     .filter(tc => tc.montant_collecte != null)
     .reduce((sum, tc) => sum + (tc.montant_collecte ?? 0), 0);
   const tauxLivraison = totalColis > 0 ? Math.round((totalLivres / totalColis) * 100) : 0;
 
-  const globalStats = { totalColis, totalLivres, totalRetournes, totalCash, tauxLivraison, totalTournees: tournees.length };
+  const globalStats = { totalColis, totalLivres, totalRetournes, totalCash, tauxLivraison, totalTournees: filteredTournees.length };
 
   const getTourneeStats = (tourneeId: string) => {
     const commandes = allTc.filter(tc => tc.tournee_id === tourneeId);
@@ -66,20 +73,27 @@ export default function LivreurHistoriquePage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard label="Total Tournées" value={globalStats.totalTournees} color="border-l-blue-500" />
         <KpiCard label="Total Colis" value={globalStats.totalColis} color="border-l-indigo-500" />
-        <KpiCard label="Total Livres" value={globalStats.totalLivres} color="border-l-green-500" />
+        <KpiCard label="Total Livrés" value={globalStats.totalLivres} color="border-l-green-500" />
         <KpiCard label="Taux Livraison" value={`${globalStats.tauxLivraison}%`} color={globalStats.tauxLivraison >= 70 ? 'border-l-green-500' : 'border-l-red-500'} />
         <KpiCard label="Cash Total" value={formatCurrency(globalStats.totalCash)} color="border-l-emerald-500" />
       </div>
 
+      <DateRangeFilter
+        dateDebut={dateDebut}
+        dateFin={dateFin}
+        onDateDebutChange={setDateDebut}
+        onDateFinChange={setDateFin}
+      />
+
       <div className="space-y-3">
-        {tournees.length === 0 ? (
+        {filteredTournees.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
               Aucune tournée enregistrée.
             </CardContent>
           </Card>
         ) : (
-          tournees.map(tournee => {
+          filteredTournees.map(tournee => {
             const stats = getTourneeStats(tournee.id);
             const statutConfig = STATUT_TOURNEE_CONFIG[tournee.statut] ?? STATUT_TOURNEE_CONFIG.en_preparation;
             const isExpanded = expandedTournee === tournee.id;
@@ -115,11 +129,11 @@ export default function LivreurHistoriquePage() {
                         <p className="font-bold">{stats.total}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Livres</p>
+                        <p className="text-xs text-muted-foreground">Livrés</p>
                         <p className="font-bold text-green-600">{stats.livres}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Retournes</p>
+                        <p className="text-xs text-muted-foreground">Retournés</p>
                         <p className="font-bold text-red-600">{stats.retournes}</p>
                       </div>
                       <div>
@@ -151,12 +165,12 @@ export default function LivreurHistoriquePage() {
                             <span className="ml-2 font-mono">{tournee.id}</span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Creation:</span>
+                            <span className="text-muted-foreground">Création:</span>
                             <span className="ml-2">{formatDateTime(tournee.date_creation)}</span>
                           </div>
                           {tournee.date_cloture && (
                             <div>
-                              <span className="text-muted-foreground">Cloture:</span>
+                              <span className="text-muted-foreground">Clôture:</span>
                               <span className="ml-2">{formatDateTime(tournee.date_cloture)}</span>
                             </div>
                           )}

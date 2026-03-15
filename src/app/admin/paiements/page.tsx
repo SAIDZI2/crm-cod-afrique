@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { Pagination } from '@/components/pagination';
 import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
@@ -15,28 +18,34 @@ import { Loader2 } from 'lucide-react';
 
 const statutColors: Record<string, { label: string; className: string }> = {
   en_attente: { label: 'En Attente', className: 'bg-yellow-100 text-yellow-700 border-0' },
-  approuve: { label: 'Approuve', className: 'bg-green-100 text-green-700 border-0' },
-  paye: { label: 'Paye', className: 'bg-blue-100 text-blue-700 border-0' },
-  rejete: { label: 'Rejete', className: 'bg-red-100 text-red-700 border-0' },
+  approuve: { label: 'Approuvé', className: 'bg-green-100 text-green-700 border-0' },
+  paye: { label: 'Payé', className: 'bg-blue-100 text-blue-700 border-0' },
+  rejete: { label: 'Rejeté', className: 'bg-red-100 text-red-700 border-0' },
 };
 
 export default function AdminPaiementsPage() {
   const { data: paiementsData, loading, refetch } = useSupabase(() => getAllPaiements(), []);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [statutFilter, setStatutFilter] = useState('tous');
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
 
-  const paiements = paiementsData ?? [];
+  const allPaiements = paiementsData ?? [];
+  const paiements = filterByDateRange(allPaiements, 'created_at', dateDebut, dateFin).filter((p) => {
+    return statutFilter === 'tous' || p.statut === statutFilter;
+  });
   const { page, setPage, totalPages, paginatedItems } = usePagination(paiements, 15);
 
   if (loading) return <LoadingPage />;
 
-  const enAttente = paiements.filter(p => p.statut === 'en_attente');
+  const enAttente = allPaiements.filter(p => p.statut === 'en_attente');
   const totalEnAttente = enAttente.reduce((s, p) => s + p.montant, 0);
 
   const handleAction = async (id: string, statut: string) => {
     setActionLoading(`${statut}-${id}`);
     try {
       await updatePaiement(id, { statut } as Record<string, unknown>);
-      toast.success(`Paiement ${statut === 'approuve' ? 'approuve' : statut === 'paye' ? 'marque comme paye' : 'rejete'}.`);
+      toast.success(`Paiement ${statut === 'approuve' ? 'approuvé' : statut === 'paye' ? 'marqué comme payé' : 'rejeté'}.`);
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Inconnue'));
@@ -52,6 +61,28 @@ export default function AdminPaiementsPage() {
         <p className="text-sm text-muted-foreground">
           {enAttente.length} demandes en attente — {formatCurrency(totalEnAttente)} total
         </p>
+      </div>
+
+      {/* Filters */}
+      <div className="space-y-3">
+        <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les statuts</SelectItem>
+            <SelectItem value="en_attente">En Attente</SelectItem>
+            <SelectItem value="approuve">Approuvé</SelectItem>
+            <SelectItem value="paye">Payé</SelectItem>
+            <SelectItem value="rejete">Rejeté</SelectItem>
+          </SelectContent>
+        </Select>
+        <DateRangeFilter
+          dateDebut={dateDebut}
+          dateFin={dateFin}
+          onDateDebutChange={setDateDebut}
+          onDateFinChange={setDateFin}
+        />
       </div>
 
       <Card>
@@ -75,7 +106,7 @@ export default function AdminPaiementsPage() {
               {paiements.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Aucun paiement enregistre.
+                    Aucun paiement enregistré.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -127,7 +158,7 @@ export default function AdminPaiementsPage() {
                             disabled={actionLoading === `paye-${p.id}`}
                           >
                             {actionLoading === `paye-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                            Marquer Paye
+                            Marquer Payé
                           </Button>
                         )}
                         {(p.statut === 'paye' || p.statut === 'rejete') && (

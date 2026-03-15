@@ -13,6 +13,10 @@ import { formatCurrency } from '@/lib/constants';
 import { exportCsv } from '@/lib/export-csv';
 import { toast } from 'sonner';
 import { Loader2, Download } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
+import { useDebounce } from '@/hooks/use-debounce';
 
 const statutColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   en_attente: 'secondary',
@@ -25,6 +29,11 @@ export default function AdminCommissionsPage() {
   const { data: commissionsData, loading, refetch } = useSupabase(() => getCommissions(), []);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [statutFilter, setStatutFilter] = useState('tous');
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
   const handleApprove = async (id: string) => {
     setActionLoading(`approve-${id}`);
@@ -68,7 +77,17 @@ export default function AdminCommissionsPage() {
     }
   };
 
-  const commissions = commissionsData ?? [];
+  const allCommissions = commissionsData ?? [];
+
+  const commissions = filterByDateRange(allCommissions, 'created_at', dateDebut, dateFin).filter((c) => {
+    const matchStatut = statutFilter === 'tous' || c.statut === statutFilter;
+    const s = debouncedSearch.toLowerCase();
+    const matchSearch = !s ||
+      c.user?.nom?.toLowerCase().includes(s) ||
+      c.user?.email?.toLowerCase().includes(s) ||
+      c.commande?.id?.toLowerCase().includes(s);
+    return matchStatut && matchSearch;
+  });
   const { page, setPage, totalPages, paginatedItems } = usePagination(commissions, 15);
 
   if (loading) return <LoadingPage />;
@@ -102,6 +121,36 @@ export default function AdminCommissionsPage() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Input
+            placeholder="Rechercher (nom, email, commande)..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">Tous les statuts</SelectItem>
+              <SelectItem value="en_attente">En Attente</SelectItem>
+              <SelectItem value="approuvee">Approuvée</SelectItem>
+              <SelectItem value="payee">Payée</SelectItem>
+              <SelectItem value="rejetee">Rejetée</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DateRangeFilter
+          dateDebut={dateDebut}
+          dateFin={dateFin}
+          onDateDebutChange={setDateDebut}
+          onDateFinChange={setDateFin}
+        />
+      </div>
+
       {feedback && (
         <div className={`p-3 rounded-lg text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
           {feedback.message}
@@ -110,7 +159,7 @@ export default function AdminCommissionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{commissions.length} lignes</CardTitle>
+          <CardTitle>{commissions.length} commission{commissions.length > 1 ? 's' : ''}</CardTitle>
         </CardHeader>
         <CardContent className="overflow-auto">
           <Table>

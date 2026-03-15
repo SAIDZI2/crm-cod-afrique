@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -11,12 +12,17 @@ import {
 } from '@/components/ui/table';
 import { BarChart } from '@/components/charts/bar-chart';
 import { LineChart } from '@/components/charts/line-chart';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getCommandes, getAppels, getUsersByRole } from '@/lib/supabase/queries';
 
 export default function StatistiquesPage() {
   const { user } = useAuth();
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
   const { data: commandesData, loading: l1 } = useSupabase(() => getCommandes(), []);
   const { data: appelsData, loading: l2 } = useSupabase(() => getAppels(), []);
   const { data: usersData, loading: l3 } = useSupabase(() => getUsersByRole('call_center'), []);
@@ -26,10 +32,14 @@ export default function StatistiquesPage() {
   const allAppels = appelsData ?? [];
   const agents = usersData ?? [];
 
+  // Filter data by date range
+  const filteredCommandes = filterByDateRange(allCommandes, 'created_at', dateDebut, dateFin);
+  const filteredAppels = filterByDateRange(allAppels, 'date_appel', dateDebut, dateFin);
+
   // Agent stats
   const agentStats = agents.map((agent) => {
-    const agentAppels = allAppels.filter((a) => a.agent_id === agent.id);
-    const agentCommandes = allCommandes.filter((c) => c.agent_id === agent.id);
+    const agentAppels = filteredAppels.filter((a) => a.agent_id === agent.id);
+    const agentCommandes = filteredCommandes.filter((c) => c.agent_id === agent.id);
 
     const confirmes = agentCommandes.filter((c) => c.statut === 'confirme').length;
     const echoues = agentCommandes.filter((c) => c.statut === 'echoue').length;
@@ -80,13 +90,17 @@ export default function StatistiquesPage() {
   // Chart data: confirmes vs echoues vs reportes par jour
   const barChartData = (() => {
     const days: Record<string, { jour: string; confirmes: number; echoues: number; reportes: number }> = {};
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
+    // Determine range: if dateDebut/dateFin set, use them; otherwise default to 7 days
+    const endDate = dateFin ? new Date(dateFin) : new Date();
+    const startDate = dateDebut ? new Date(dateDebut) : new Date(endDate.getTime() - 6 * 86400000);
+    const diffDays = Math.min(Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000), 60);
+    for (let i = diffDays; i >= 0; i--) {
+      const date = new Date(endDate);
       date.setDate(date.getDate() - i);
       const key = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       days[key] = { jour: key, confirmes: 0, echoues: 0, reportes: 0 };
     }
-    allCommandes.forEach((c) => {
+    filteredCommandes.forEach((c) => {
       const dateKey = new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       if (days[dateKey]) {
         if (c.statut === 'confirme') days[dateKey].confirmes++;
@@ -100,13 +114,17 @@ export default function StatistiquesPage() {
   // Line chart data
   const lineChartData = (() => {
     const days: Record<string, { jour: string; total: number; confirmes: number }> = {};
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
+    // Determine range: if dateDebut/dateFin set, use them; otherwise default to 7 days
+    const endDate = dateFin ? new Date(dateFin) : new Date();
+    const startDate = dateDebut ? new Date(dateDebut) : new Date(endDate.getTime() - 6 * 86400000);
+    const diffDays = Math.min(Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000), 60);
+    for (let i = diffDays; i >= 0; i--) {
+      const date = new Date(endDate);
       date.setDate(date.getDate() - i);
       const key = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       days[key] = { jour: key, total: 0, confirmes: 0 };
     }
-    allCommandes.forEach((c) => {
+    filteredCommandes.forEach((c) => {
       const dateKey = new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       if (days[dateKey]) {
         if (['confirme', 'echoue', 'reporte'].includes(c.statut)) {
@@ -128,6 +146,13 @@ export default function StatistiquesPage() {
         <p className="text-sm text-gray-500 mt-1">Performances individuelles et équipe</p>
       </div>
 
+      <DateRangeFilter
+        dateDebut={dateDebut}
+        dateFin={dateFin}
+        onDateDebutChange={setDateDebut}
+        onDateFinChange={setDateFin}
+      />
+
       {/* Personal Stats */}
       {personalStats && (
         <Card>
@@ -138,7 +163,7 @@ export default function StatistiquesPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold">{personalStats.totalTraites}</p>
-                <p className="text-xs text-muted-foreground">Total traites</p>
+                <p className="text-xs text-muted-foreground">Total traités</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-green-700">{personalStats.confirmes}</p>

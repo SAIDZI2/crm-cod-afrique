@@ -28,6 +28,7 @@ import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { getCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, STATUT_CONFIG } from '@/lib/constants';
 import { exportCsv } from '@/lib/export-csv';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import type { StatutCommande } from '@/lib/types';
 import { Download, Eye } from 'lucide-react';
 
@@ -36,10 +37,12 @@ export default function AdminCommandesPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [statutFilter, setStatutFilter] = useState('tous');
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
 
   const commandes = commandesData ?? [];
 
-  const filtered = commandes.filter((c) => {
+  const filtered = filterByDateRange(commandes, 'created_at', dateDebut, dateFin).filter((c) => {
     const s = debouncedSearch.toLowerCase();
     const matchSearch = !s ||
       c.id.toLowerCase().includes(s) ||
@@ -96,26 +99,34 @@ export default function AdminCommandesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Rechercher (ID, nom, tel, ville)..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Input
+            placeholder="Rechercher (ID, nom, tel, ville)..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">Tous les statuts</SelectItem>
+              {(Object.keys(STATUT_CONFIG) as StatutCommande[]).map((statut) => (
+                <SelectItem key={statut} value={statut}>
+                  {STATUT_CONFIG[statut].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <DateRangeFilter
+          dateDebut={dateDebut}
+          dateFin={dateFin}
+          onDateDebutChange={setDateDebut}
+          onDateFinChange={setDateFin}
         />
-        <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tous">Tous les statuts</SelectItem>
-            {(Object.keys(STATUT_CONFIG) as StatutCommande[]).map((statut) => (
-              <SelectItem key={statut} value={statut}>
-                {STATUT_CONFIG[statut].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Table */}

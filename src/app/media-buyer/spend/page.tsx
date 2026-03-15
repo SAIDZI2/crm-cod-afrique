@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { KpiCard } from '@/components/kpi-card';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -47,13 +48,17 @@ export default function SpendPage() {
     note: '',
     date_depense: '',
   });
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
 
   if (l1 || l2 || l3) return <LoadingPage />;
   const depenses = depensesData ?? [];
   const commandes = commandesData ?? [];
   const produits = produitsData ?? [];
 
-  const totalDepense = depenses.reduce((sum, d) => sum + d.montant, 0);
+  const filteredDepenses = filterByDateRange(depenses, 'date_depense', dateDebut, dateFin);
+
+  const totalDepense = filteredDepenses.reduce((sum, d) => sum + d.montant, 0);
   const totalLeads = commandes.length;
   const totalLivres = commandes.filter((c) => c.statut === 'livre').length;
   const cpl = totalLeads > 0 ? totalDepense / totalLeads : 0;
@@ -175,6 +180,13 @@ export default function SpendPage() {
         />
       </div>
 
+      <DateRangeFilter
+        dateDebut={dateDebut}
+        dateFin={dateFin}
+        onDateDebutChange={setDateDebut}
+        onDateFinChange={setDateFin}
+      />
+
       {/* Expenses Table */}
       <Card>
         <CardHeader>
@@ -191,7 +203,7 @@ export default function SpendPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {depenses.map((depense) => {
+              {filteredDepenses.map((depense) => {
                 const produit = produits.find((p) => p.id === depense.produit_id);
                 return (
                   <TableRow key={depense.id}>
