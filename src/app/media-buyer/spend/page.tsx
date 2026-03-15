@@ -60,13 +60,14 @@ export default function SpendPage() {
   const cpd = totalLivres > 0 ? totalDepense / totalLivres : 0;
 
   async function handleAddDepense() {
+    if (!user) return;
     if (!newDepense.montant || !newDepense.date_depense) {
       toast.error('Veuillez remplir le montant et la date.');
       return;
     }
     try {
       await createDepense({
-        user_id: user!.id,
+        user_id: user.id,
         produit_id: newDepense.produit_id || undefined,
         montant: parseFloat(newDepense.montant),
         date_depense: newDepense.date_depense,

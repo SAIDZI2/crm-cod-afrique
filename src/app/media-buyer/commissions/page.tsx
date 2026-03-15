@@ -46,7 +46,7 @@ export default function CommissionsPage() {
     const livrees = affilieCommandes.filter((c) => c.statut === 'livre');
     const affilieCommissions = commissions.filter((c) => c.user_id === affilie.id);
     const totalCommission = affilieCommissions.reduce((s, c) => s + c.montant, 0);
-    const aPayér = affilieCommissions
+    const aPayer = affilieCommissions
       .filter((c) => c.statut === 'approuvee')
       .reduce((s, c) => s + c.montant, 0);
     const enAttente = affilieCommissions
@@ -61,15 +61,15 @@ export default function CommissionsPage() {
       totalCommandes: affilieCommandes.length,
       livrees: livrees.length,
       totalCommission,
-      aPayér,
+      aPayer,
       enAttente,
       paye,
     };
   });
 
-  const totalAPayér = affilieStats.reduce((s, a) => s + a.aPayér, 0);
+  const totalAPayer = affilieStats.reduce((s, a) => s + a.aPayer, 0);
   const totalEnAttente = affilieStats.reduce((s, a) => s + a.enAttente, 0);
-  const totalPayé = affilieStats.reduce((s, a) => s + a.paye, 0);
+  const totalPaye = affilieStats.reduce((s, a) => s + a.paye, 0);
 
   return (
     <div className="space-y-6">
@@ -83,8 +83,8 @@ export default function CommissionsPage() {
           color="border-blue-500"
         />
         <KpiCard
-          label="À Payér"
-          value={formatCurrency(totalAPayér)}
+          label="À Payer"
+          value={formatCurrency(totalAPayer)}
           color="border-orange-500"
         />
         <KpiCard
@@ -94,7 +94,7 @@ export default function CommissionsPage() {
         />
         <KpiCard
           label="Payé"
-          value={formatCurrency(totalPayé)}
+          value={formatCurrency(totalPaye)}
           color="border-green-500"
         />
       </div>
@@ -114,7 +114,7 @@ export default function CommissionsPage() {
                 <TableHead>Livrées</TableHead>
                 <TableHead>Commission %</TableHead>
                 <TableHead>Total Commission</TableHead>
-                <TableHead>À Payér</TableHead>
+                <TableHead>À Payer</TableHead>
                 <TableHead>En Attente</TableHead>
                 <TableHead>Payé</TableHead>
                 <TableHead>Statut</TableHead>
@@ -136,7 +136,7 @@ export default function CommissionsPage() {
                     {formatCurrency(affilie.totalCommission)}
                   </TableCell>
                   <TableCell className="text-orange-600 font-medium">
-                    {formatCurrency(affilie.aPayér)}
+                    {formatCurrency(affilie.aPayer)}
                   </TableCell>
                   <TableCell className="text-yellow-600 font-medium">
                     {formatCurrency(affilie.enAttente)}

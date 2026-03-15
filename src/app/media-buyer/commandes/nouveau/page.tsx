@@ -55,17 +55,18 @@ export default function NouvelleCommandePage() {
       toast.error('Veuillez remplir tous les champs obligatoires.');
       return;
     }
+    if (!user) return;
     try {
       setSubmitting(true);
       // Check blacklist before creating
       const isBlacklisted = await checkBlacklist(form.telephone);
       if (isBlacklisted) {
-        toast.error('Ce numero de telephone est dans la blacklist. Commande refusee.');
+        toast.error('Ce numéro de téléphone est dans la blacklist. Commande refusée.');
         setSubmitting(false);
         return;
       }
       const commande = await createCommande({
-        user_id: user!.id,
+        user_id: user.id,
         destinataire_nom: form.destinataire_nom,
         telephone: form.telephone,
         adresse: form.adresse,
@@ -80,13 +81,13 @@ export default function NouvelleCommandePage() {
           commande_id: commande.id,
           produit_id: form.produit_id,
           quantite: form.quantite,
-          prix_unitaire: selectedProduit!.prix,
+          prix_unitaire: selectedProduit?.prix ?? 0,
         },
       ]);
       toast.success(`Commande créée ! ${form.destinataire_nom} — ${selectedProduit?.nom} — ${formatCurrency(total)}`);
       router.push('/media-buyer/commandes');
     } catch (err) {
-      toast.error('Erreur lors de la creation: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+      toast.error('Erreur lors de la création: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
     } finally {
       setSubmitting(false);
     }
@@ -174,7 +175,7 @@ export default function NouvelleCommandePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="quantite">Quantite</Label>
+                <Label htmlFor="quantite">Quantité</Label>
                 <Input
                   id="quantite"
                   type="number"
@@ -201,7 +202,7 @@ export default function NouvelleCommandePage() {
                 id="commentaire"
                 value={form.commentaire}
                 onChange={(e) => handleChange('commentaire', e.target.value)}
-                placeholder="Notes supplementaires..."
+                placeholder="Notes supplémentaires..."
                 rows={3}
               />
             </div>
@@ -232,7 +233,7 @@ export default function NouvelleCommandePage() {
 
         <div className="flex gap-4 mt-6">
           <Button type="submit" className="flex-1" disabled={submitting}>
-            {submitting ? 'Creation en cours...' : 'Creer la Commande'}
+            {submitting ? 'Création en cours...' : 'Créer la Commande'}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Annuler

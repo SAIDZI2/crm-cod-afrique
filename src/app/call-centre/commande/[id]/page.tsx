@@ -133,11 +133,12 @@ export default function CommandeDetailPage() {
   }
 
   async function handleConfirmer() {
+    if (!user || !commande) return;
     await handleAction('Confirmer', async () => {
-      await updateCommandeStatut(commande!.id, 'confirme', user?.id);
+      await updateCommandeStatut(commande.id, 'confirme', user.id);
       await createAppel({
-        commande_id: commande!.id,
-        agent_id: user!.id,
+        commande_id: commande.id,
+        agent_id: user.id,
         resultat: 'confirme',
         duree_secondes: getCallDuration(),
         note: note.trim() || undefined,
@@ -146,11 +147,12 @@ export default function CommandeDetailPage() {
   }
 
   async function handleEchoue() {
+    if (!user || !commande) return;
     await handleAction('Echoue', async () => {
-      await updateCommandeStatut(commande!.id, 'echoue', user?.id);
+      await updateCommandeStatut(commande.id, 'echoue', user.id);
       await createAppel({
-        commande_id: commande!.id,
-        agent_id: user!.id,
+        commande_id: commande.id,
+        agent_id: user.id,
         resultat: 'echoue',
         duree_secondes: getCallDuration(),
         note: note.trim() || undefined,
@@ -159,16 +161,16 @@ export default function CommandeDetailPage() {
   }
 
   async function handleReporter() {
-    if (!reportDate || !reportTime) return;
+    if (!reportDate || !reportTime || !user || !commande) return;
     await handleAction('Reporter', async () => {
       const dateRappel = new Date(`${reportDate}T${reportTime}`).toISOString();
       await createRappel({
-        commande_id: commande!.id,
-        agent_id: user!.id,
+        commande_id: commande.id,
+        agent_id: user.id,
         date_rappel: dateRappel,
         note: note.trim() || undefined,
       });
-      await updateCommandeStatut(commande!.id, 'reporte', user?.id);
+      await updateCommandeStatut(commande.id, 'reporte', user.id);
       setReportDialogOpen(false);
       setReportDate('');
       setReportTime('');
@@ -176,21 +178,22 @@ export default function CommandeDetailPage() {
   }
 
   async function handleBlacklister() {
+    if (!commande) return;
     await handleAction('Blacklister', async () => {
       await addToBlacklist({
-        telephone: commande!.telephone,
-        motif: `Blackliste depuis commande ${commande!.id}`,
+        telephone: commande.telephone,
+        motif: `Blacklisté depuis commande ${commande.id}`,
         user_id: user?.id,
       });
     });
   }
 
   async function handleSaveNote() {
-    if (!note.trim()) return;
+    if (!note.trim() || !user || !commande) return;
     await handleAction('Note', async () => {
       await createAppel({
-        commande_id: commande!.id,
-        agent_id: user!.id,
+        commande_id: commande.id,
+        agent_id: user.id,
         resultat: 'pas_de_reponse',
         duree_secondes: getCallDuration(),
         note: note.trim(),
@@ -259,7 +262,7 @@ export default function CommandeDetailPage() {
                 <p className="font-medium">{commande.destinataire_nom}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Telephone</p>
+                <p className="text-xs text-muted-foreground">Téléphone</p>
                 <div className="flex items-center gap-2">
                   <p className="font-medium font-mono">{commande.telephone}</p>
                   <a href={`tel:${commande.telephone}`}>
@@ -318,7 +321,7 @@ export default function CommandeDetailPage() {
         {/* Right Panel - Order Detail */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Detail de la Commande</CardTitle>
+            <CardTitle className="text-base">Détail de la Commande</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -327,7 +330,7 @@ export default function CommandeDetailPage() {
                 <p className="font-mono text-sm font-medium">{commande.id}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Date creation</p>
+                <p className="text-xs text-muted-foreground">Date création</p>
                 <p className="text-sm">{formatDate(commande.created_at)}</p>
               </div>
             </div>
@@ -392,7 +395,7 @@ export default function CommandeDetailPage() {
               className="gap-2"
             >
               <Phone className="w-4 h-4" />
-              {callActive ? 'Arreter' : 'Demarrer l\'appel'}
+              {callActive ? 'Arrêter' : 'Démarrer l\'appel'}
             </Button>
           </div>
         </CardContent>

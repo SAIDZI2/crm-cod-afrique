@@ -42,6 +42,7 @@ export default function BlacklistPage() {
   if (loading) return <LoadingPage />;
 
   async function handleAdd() {
+    if (!user) return;
     if (!newTelephone.trim()) {
       toast.error('Veuillez entrer un numéro de téléphone.');
       return;
@@ -50,7 +51,7 @@ export default function BlacklistPage() {
       await addToBlacklist({
         telephone: newTelephone.trim(),
         motif: newMotif.trim() || undefined,
-        user_id: user!.id,
+        user_id: user.id,
       });
       toast.success('Numéro ajouté à la blacklist.');
       setNewTelephone('');

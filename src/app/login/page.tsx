@@ -65,9 +65,10 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
 
+    const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? 'demo123';
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: demoEmail,
-      password: 'demo123',
+      password: demoPassword,
     });
 
     if (authError) {
@@ -128,7 +129,7 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Acces rapide (Demo)</CardTitle>
+            <CardTitle className="text-sm">Accès rapide (Demo)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {DEMO_ACCOUNTS.map(account => (

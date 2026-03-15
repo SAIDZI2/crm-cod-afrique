@@ -77,9 +77,10 @@ export default function LivreurTourneePage() {
         statut_livraison: 'retourne',
         motif_retour: motifRetour as MotifRetour,
       });
+      if (!user) return;
       await createRetour({
         commande_id: commandeId,
-        livreur_id: user!.id,
+        livreur_id: user.id,
         motif: motifRetour as MotifRetour,
         note: noteRetour || undefined,
         recu_au_depot: false,
@@ -101,8 +102,8 @@ export default function LivreurTourneePage() {
   const filterTabs: { key: FilterTab; label: string; count: number }[] = [
     { key: 'tous', label: 'Tous', count: commandes.length },
     { key: 'en_cours', label: 'En cours', count: commandes.filter(c => c.statut_livraison === 'en_cours').length },
-    { key: 'livre', label: 'Livres', count: commandes.filter(c => c.statut_livraison === 'livre').length },
-    { key: 'retourne', label: 'Retournes', count: commandes.filter(c => c.statut_livraison === 'retourne').length },
+    { key: 'livre', label: 'Livrés', count: commandes.filter(c => c.statut_livraison === 'livre').length },
+    { key: 'retourne', label: 'Retournés', count: commandes.filter(c => c.statut_livraison === 'retourne').length },
   ];
 
   const mapStatutToCommande = (statut: StatutLivraison) => {
@@ -119,9 +120,9 @@ export default function LivreurTourneePage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Ma Tournee</h1>
+        <h1 className="text-2xl font-bold">Ma Tournée</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {stats.livre} livres / {stats.total} total — Cash: {formatCurrency(stats.cashTotal)}
+          {stats.livre} livrés / {stats.total} total — Cash: {formatCurrency(stats.cashTotal)}
         </p>
       </div>
 
@@ -294,7 +295,7 @@ export default function LivreurTourneePage() {
                         value={noteRetour}
                         onChange={e => setNoteRetour(e.target.value)}
                         className="mt-1 min-h-20"
-                        placeholder="Details supplementaires..."
+                        placeholder="Détails supplémentaires..."
                       />
                     </div>
                     <div className="flex gap-2">

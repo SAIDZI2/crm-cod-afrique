@@ -26,17 +26,17 @@ import { toast } from 'sonner';
 import { Loader2, Wallet } from 'lucide-react';
 
 const commissionStatusConfig: Record<string, { label: string; className: string }> = {
-  approuvee: { label: 'Approuvee', className: 'bg-green-100 text-green-700 border-0' },
+  approuvee: { label: 'Approuvée', className: 'bg-green-100 text-green-700 border-0' },
   en_attente: { label: 'En Attente', className: 'bg-yellow-100 text-yellow-700 border-0' },
-  payee: { label: 'Payee', className: 'bg-blue-100 text-blue-700 border-0' },
-  rejetee: { label: 'Rejetee', className: 'bg-red-100 text-red-700 border-0' },
+  payee: { label: 'Payée', className: 'bg-blue-100 text-blue-700 border-0' },
+  rejetee: { label: 'Rejetée', className: 'bg-red-100 text-red-700 border-0' },
 };
 
 const paiementStatusConfig: Record<string, { label: string; className: string }> = {
   en_attente: { label: 'En Attente', className: 'bg-yellow-100 text-yellow-700 border-0' },
-  approuve: { label: 'Approuve', className: 'bg-green-100 text-green-700 border-0' },
-  paye: { label: 'Paye', className: 'bg-blue-100 text-blue-700 border-0' },
-  rejete: { label: 'Rejete', className: 'bg-red-100 text-red-700 border-0' },
+  approuve: { label: 'Approuvé', className: 'bg-green-100 text-green-700 border-0' },
+  paye: { label: 'Payé', className: 'bg-blue-100 text-blue-700 border-0' },
+  rejete: { label: 'Rejeté', className: 'bg-red-100 text-red-700 border-0' },
 };
 
 const methodeOptions = [
@@ -93,16 +93,17 @@ export default function BalancePage() {
       toast.error('Veuillez sélectionner une méthode de paiement.');
       return;
     }
+    if (!user) return;
     setRetraitLoading(true);
     try {
       await createPaiement({
-        user_id: user!.id,
+        user_id: user.id,
         montant,
         methode,
         reference: reference.trim() || undefined,
         statut: 'en_attente',
       });
-      toast.success(`Demande de retrait de ${formatCurrency(montant)} envoyee.`);
+      toast.success(`Demande de retrait de ${formatCurrency(montant)} envoyée.`);
       setShowDialog(false);
       setMontantRetrait('');
       setMethode('');
@@ -167,7 +168,7 @@ export default function BalancePage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="retrait-ref" className="text-sm font-medium">Reference (optionnel)</Label>
+                <Label htmlFor="retrait-ref" className="text-sm font-medium">Référence (optionnel)</Label>
                 <Input
                   id="retrait-ref"
                   value={reference}
@@ -191,9 +192,9 @@ export default function BalancePage() {
 
       {/* Soldes */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Approuve" value={formatCurrency(approuve)} color="border-green-500" />
+        <KpiCard label="Approuvé" value={formatCurrency(approuve)} color="border-green-500" />
         <KpiCard label="En Attente" value={formatCurrency(enAttente)} color="border-yellow-500" />
-        <KpiCard label="Total Paye" value={formatCurrency(totalPaye)} color="border-blue-500" />
+        <KpiCard label="Total Payé" value={formatCurrency(totalPaye)} color="border-blue-500" />
         <KpiCard
           label="Disponible"
           value={formatCurrency(disponible)}
@@ -205,7 +206,7 @@ export default function BalancePage() {
       {/* Tabs */}
       <Tabs defaultValue="resume" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="resume">Resume</TabsTrigger>
+          <TabsTrigger value="resume">Résumé</TabsTrigger>
           <TabsTrigger value="commissions">Commissions</TabsTrigger>
           <TabsTrigger value="retraits">Retraits</TabsTrigger>
         </TabsList>
@@ -214,24 +215,24 @@ export default function BalancePage() {
         <TabsContent value="resume">
           <Card>
             <CardHeader>
-              <CardTitle>Resume Financier</CardTitle>
+              <CardTitle>Résumé Financier</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-700">Total Commissions Gagnees</p>
+                  <p className="text-sm text-green-700">Total Commissions Gagnées</p>
                   <p className="text-2xl font-bold text-green-800">
                     {formatCurrency(approuve + enAttente + totalPaye)}
                   </p>
                 </div>
                 <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-700">Total Retire</p>
+                  <p className="text-sm text-blue-700">Total Retiré</p>
                   <p className="text-2xl font-bold text-blue-800">{formatCurrency(totalPaye)}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-sm text-muted-foreground">Commandes Livrees</p>
+                  <p className="text-sm text-muted-foreground">Commandes Livrées</p>
                   <p className="text-xl font-bold">
                     {commandes.filter((c) => c.statut === 'livre').length}
                   </p>
