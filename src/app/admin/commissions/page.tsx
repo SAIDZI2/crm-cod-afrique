@@ -68,9 +68,10 @@ export default function AdminCommissionsPage() {
     }
   };
 
-  if (loading) return <LoadingPage />;
   const commissions = commissionsData ?? [];
   const { page, setPage, totalPages, paginatedItems } = usePagination(commissions, 15);
+
+  if (loading) return <LoadingPage />;
 
   return (
     <div className="space-y-6">

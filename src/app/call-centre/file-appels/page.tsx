@@ -65,7 +65,6 @@ export default function FileAppelsPage() {
   const [productFilter, setProductFilter] = useState<string>('tous');
   const [cityFilter, setCityFilter] = useState<string>('tous');
 
-  if (l1 || l2 || l3) return <LoadingPage />;
   const allCommandes = commandesData ?? [];
   const rappels = rappelsData ?? [];
   const produits = produitsData ?? [];
@@ -127,6 +126,8 @@ export default function FileAppelsPage() {
   });
 
   const { page, setPage, totalPages, paginatedItems } = usePagination(filteredItems, 15);
+
+  if (l1 || l2 || l3) return <LoadingPage />;
 
   return (
     <div className="space-y-6">

@@ -29,7 +29,6 @@ export default function BlacklistPage() {
   const [newTelephone, setNewTelephone] = useState('');
   const [newMotif, setNewMotif] = useState('');
 
-  if (loading) return <LoadingPage />;
   const blacklist = blacklistData ?? [];
 
   const filtered = blacklist.filter(
@@ -39,6 +38,8 @@ export default function BlacklistPage() {
   );
 
   const { page, setPage, totalPages, paginatedItems } = usePagination(filtered, 15);
+
+  if (loading) return <LoadingPage />;
 
   async function handleAdd() {
     if (!newTelephone.trim()) {

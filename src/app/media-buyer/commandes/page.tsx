@@ -43,8 +43,6 @@ export default function CommandesPage() {
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
 
-  if (loading) return <LoadingPage />;
-
   const commandesList = commandes ?? [];
 
   const filtered = commandesList.filter((c) => {
@@ -61,6 +59,8 @@ export default function CommandesPage() {
   });
 
   const { page, setPage, totalPages, paginatedItems } = usePagination(filtered, 15);
+
+  if (loading) return <LoadingPage />;
 
   return (
     <div className="space-y-6">

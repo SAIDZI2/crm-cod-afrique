@@ -112,10 +112,11 @@ export default function AdminUsersPage() {
     }
   };
 
-  if (loading) return <LoadingPage />;
   const users = usersData ?? [];
-  const actifs = users.filter((u) => u.actif).length;
   const { page, setPage, totalPages, paginatedItems } = usePagination(users, 15);
+
+  if (loading) return <LoadingPage />;
+  const actifs = users.filter((u) => u.actif).length;
 
   return (
     <div className="space-y-6">
