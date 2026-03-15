@@ -85,7 +85,7 @@ export default function LivreurTourneePage() {
         recu_au_depot: false,
         date_retour: new Date().toISOString(),
       });
-      await updateCommandeStatutSecure(commandeId, 'retourne');
+      await updateCommandeStatutSecure(commandeId, 'en_retour');
       setExpandedRetour(null);
       setMotifRetour('');
       setNoteRetour('');

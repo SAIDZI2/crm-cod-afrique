@@ -116,7 +116,7 @@ export default function LivreurColisDetailPage() {
         recu_au_depot: false,
         date_retour: new Date().toISOString(),
       });
-      await updateCommandeStatutSecure(commande!.id, 'retourne');
+      await updateCommandeStatutSecure(commande!.id, 'en_retour');
       resetForm();
       setFeedback({ type: 'success', message: 'Retour declare avec succes.' });
       refetch();

@@ -131,8 +131,8 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'Non autorise');
   END IF;
 
-  -- Livreurs limites a livre, retourne, reporte
-  IF v_caller_role = 'livreur' AND p_statut NOT IN ('livre', 'retourne', 'reporte') THEN
+  -- Livreurs limites a livre, en_retour, retourne, reporte
+  IF v_caller_role = 'livreur' AND p_statut NOT IN ('livre', 'en_retour', 'retourne', 'reporte') THEN
     RETURN json_build_object('success', false, 'error', 'Statut non autorise pour livreur');
   END IF;
 
