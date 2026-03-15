@@ -142,7 +142,7 @@ export default function StatistiquesPage() {
               </div>
               <div className="bg-green-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-green-700">{personalStats.confirmes}</p>
-                <p className="text-xs text-muted-foreground">Confirmes</p>
+                <p className="text-xs text-muted-foreground">Confirmés</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold">{personalStats.tauxConfirmation}%</p>
@@ -192,7 +192,7 @@ export default function StatistiquesPage() {
       {/* Team Comparison Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Comparaison Equipe</CardTitle>
+          <CardTitle className="text-base">Comparaison Équipe</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -200,7 +200,7 @@ export default function StatistiquesPage() {
               <TableRow>
                 <TableHead>Agent</TableHead>
                 <TableHead className="text-center">Total traites</TableHead>
-                <TableHead className="text-center">Confirmes</TableHead>
+                <TableHead className="text-center">Confirmés</TableHead>
                 <TableHead className="text-center">Taux confirmation</TableHead>
                 <TableHead className="text-center">Echoues</TableHead>
                 <TableHead className="text-center">Reportes</TableHead>
@@ -252,14 +252,14 @@ export default function StatistiquesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Confirmes vs Echoues vs Reportes par jour</CardTitle>
+            <CardTitle className="text-base">Confirmés vs Echoues vs Reportes par jour</CardTitle>
           </CardHeader>
           <CardContent>
             <BarChart
               data={barChartData}
               xKey="jour"
               bars={[
-                { key: 'confirmes', color: '#22c55e', label: 'Confirmes' },
+                { key: 'confirmes', color: '#22c55e', label: 'Confirmés' },
                 { key: 'echoues', color: '#ef4444', label: 'Echoues' },
                 { key: 'reportes', color: '#f97316', label: 'Reportes' },
               ]}

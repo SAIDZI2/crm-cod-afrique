@@ -68,7 +68,7 @@ export default function LivreurDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold">Dashboard Livreur</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Tournee du {tourneeActuelle?.date ?? 'Aujourd\'hui'} — {commandes.length} colis
+          Tournée du {tourneeActuelle?.date ?? 'Aujourd\'hui'} — {commandes.length} colis
         </p>
       </div>
 
@@ -84,7 +84,7 @@ export default function LivreurDashboardPage() {
           label="Livres"
           value={stats.livre}
           color="border-l-green-500"
-          subtitle="Confirmes"
+          subtitle="Confirmés"
         />
         <KpiCard
           label="En cours"

@@ -83,7 +83,7 @@ export default function NouvelleCommandePage() {
           prix_unitaire: selectedProduit!.prix,
         },
       ]);
-      toast.success(`Commande creee! ${form.destinataire_nom} — ${selectedProduit?.nom} — ${formatCurrency(total)}`);
+      toast.success(`Commande créée ! ${form.destinataire_nom} — ${selectedProduit?.nom} — ${formatCurrency(total)}`);
       router.push('/media-buyer/commandes');
     } catch (err) {
       toast.error('Erreur lors de la creation: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
@@ -113,7 +113,7 @@ export default function NouvelleCommandePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="telephone">Telephone *</Label>
+                <Label htmlFor="telephone">Téléphone *</Label>
                 <Input
                   id="telephone"
                   value={form.telephone}

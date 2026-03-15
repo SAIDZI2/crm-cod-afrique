@@ -67,7 +67,7 @@ export default function CommandeDetailPage() {
               <span className="font-medium">{commande.destinataire_nom}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Telephone</span>
+              <span className="text-sm text-muted-foreground">Téléphone</span>
               <span className="font-medium">{commande.telephone}</span>
             </div>
             <div className="flex justify-between">

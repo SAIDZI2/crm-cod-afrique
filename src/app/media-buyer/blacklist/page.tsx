@@ -52,7 +52,7 @@ export default function BlacklistPage() {
         motif: newMotif.trim() || undefined,
         user_id: user!.id,
       });
-      toast.success('Numero ajoute a la blacklist.');
+      toast.success('Numéro ajouté à la blacklist.');
       setNewTelephone('');
       setNewMotif('');
       refetch();
@@ -64,7 +64,7 @@ export default function BlacklistPage() {
   async function handleRemove(id: string) {
     try {
       await removeFromBlacklist(id);
-      toast.success('Numero retire de la blacklist.');
+      toast.success('Numéro retiré de la blacklist.');
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
@@ -78,12 +78,12 @@ export default function BlacklistPage() {
       {/* Add Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Ajouter un Numero</CardTitle>
+          <CardTitle>Ajouter un Numéro</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="space-y-2 flex-1">
-              <Label htmlFor="telephone">Telephone *</Label>
+              <Label htmlFor="telephone">Téléphone *</Label>
               <Input
                 id="telephone"
                 value={newTelephone}
@@ -119,7 +119,7 @@ export default function BlacklistPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Telephone</TableHead>
+                <TableHead>Téléphone</TableHead>
                 <TableHead>Motif</TableHead>
                 <TableHead>Date d&apos;ajout</TableHead>
                 <TableHead className="text-right">Actions</TableHead>

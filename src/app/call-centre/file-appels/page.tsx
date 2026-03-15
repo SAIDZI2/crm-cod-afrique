@@ -215,7 +215,7 @@ export default function FileAppelsPage() {
                 <TableHead>Priorite</TableHead>
                 <TableHead>Heure arrivee</TableHead>
                 <TableHead>Nom client</TableHead>
-                <TableHead>Telephone</TableHead>
+                <TableHead>Téléphone</TableHead>
                 <TableHead>Produit</TableHead>
                 <TableHead>Ville</TableHead>
                 <TableHead>Montant</TableHead>

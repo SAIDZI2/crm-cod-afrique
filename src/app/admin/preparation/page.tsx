@@ -12,9 +12,9 @@ import { Loader2, ArrowRight, Package, Truck, CheckCircle } from 'lucide-react';
 import type { StatutCommande } from '@/lib/types';
 
 const COLUMNS: { statut: StatutCommande; label: string; icon: typeof Package; nextStatut?: StatutCommande; nextLabel?: string }[] = [
-  { statut: 'confirme', label: 'Confirmees', icon: Package, nextStatut: 'en_preparation', nextLabel: 'Mettre en preparation' },
-  { statut: 'en_preparation', label: 'En Preparation', icon: Truck, nextStatut: 'expedie', nextLabel: 'Marquer expedie' },
-  { statut: 'expedie', label: 'Expediees', icon: CheckCircle },
+  { statut: 'confirme', label: 'Confirmées', icon: Package, nextStatut: 'en_preparation', nextLabel: 'Mettre en préparation' },
+  { statut: 'en_preparation', label: 'En Préparation', icon: Truck, nextStatut: 'expedie', nextLabel: 'Marquer expédié' },
+  { statut: 'expedie', label: 'Expédiées', icon: CheckCircle },
 ];
 
 export default function PreparationPage() {
@@ -29,7 +29,7 @@ export default function PreparationPage() {
     setActionLoading(commandeId);
     try {
       await updateCommandeStatut(commandeId, nextStatut);
-      toast.success(`Commande passee a "${STATUT_CONFIG[nextStatut].label}".`);
+      toast.success(`Commande passée à "${STATUT_CONFIG[nextStatut].label}".`);
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Inconnue'));
@@ -41,8 +41,8 @@ export default function PreparationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Preparation & Expedition</h1>
-        <p className="text-sm text-muted-foreground">Gerer le flux des commandes confirmees</p>
+        <h1 className="text-2xl font-bold">Préparation & Expédition</h1>
+        <p className="text-sm text-muted-foreground">Gérer le flux des commandes confirmées</p>
       </div>
 
       {/* KPI cards */}

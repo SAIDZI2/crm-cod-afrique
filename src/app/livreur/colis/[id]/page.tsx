@@ -270,7 +270,7 @@ export default function LivreurColisDetailPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Commande creee</span>
+            <span className="text-muted-foreground">Commande créée</span>
             <span>{formatDateTime(commande.created_at)}</span>
           </div>
           {tc.heure_prise_en_charge && (

@@ -12,7 +12,7 @@ import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
 import { Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
 
 const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  en_preparation: { label: 'En Preparation', bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  en_preparation: { label: 'En Préparation', bg: 'bg-yellow-100', text: 'text-yellow-800' },
   en_cours: { label: 'En Cours', bg: 'bg-blue-100', text: 'text-blue-800' },
   cloturee: { label: 'Cloturee', bg: 'bg-green-100', text: 'text-green-800' },
 };
@@ -57,14 +57,14 @@ export default function LivreurHistoriquePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Historique des Tournees</h1>
+        <h1 className="text-2xl font-bold">Historique des Tournées</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Resume de vos tournees precedentes
+          Résumé de vos tournées précédentes
         </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        <KpiCard label="Total Tournees" value={globalStats.totalTournees} color="border-l-blue-500" />
+        <KpiCard label="Total Tournées" value={globalStats.totalTournees} color="border-l-blue-500" />
         <KpiCard label="Total Colis" value={globalStats.totalColis} color="border-l-indigo-500" />
         <KpiCard label="Total Livres" value={globalStats.totalLivres} color="border-l-green-500" />
         <KpiCard label="Taux Livraison" value={`${globalStats.tauxLivraison}%`} color={globalStats.tauxLivraison >= 70 ? 'border-l-green-500' : 'border-l-red-500'} />
@@ -147,7 +147,7 @@ export default function LivreurHistoriquePage() {
                         <h4 className="text-sm font-semibold text-muted-foreground">Details de la tournee</h4>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <span className="text-muted-foreground">ID Tournee:</span>
+                            <span className="text-muted-foreground">ID Tournée:</span>
                             <span className="ml-2 font-mono">{tournee.id}</span>
                           </div>
                           <div>

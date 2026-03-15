@@ -173,7 +173,7 @@ export default function BalancePage() {
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
                   className="mt-1"
-                  placeholder="Numero de compte, telephone..."
+                  placeholder="Numéro de compte, téléphone..."
                 />
               </div>
               <Button

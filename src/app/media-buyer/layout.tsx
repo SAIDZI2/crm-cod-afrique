@@ -12,7 +12,7 @@ const sidebarItems = [
   { label: 'Spend', href: '/media-buyer/spend', icon: 'spend' },
   { label: 'Balance', href: '/media-buyer/balance', icon: 'balance' },
   { label: 'Blacklist', href: '/media-buyer/blacklist', icon: 'blacklist' },
-  { label: 'Equipe', href: '/media-buyer/equipe', icon: 'equipe' },
+  { label: 'Équipe', href: '/media-buyer/equipe', icon: 'equipe' },
   { label: 'Commissions', href: '/media-buyer/commissions', icon: 'commissions' },
 ];
 

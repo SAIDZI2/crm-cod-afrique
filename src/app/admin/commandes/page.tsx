@@ -81,7 +81,7 @@ export default function AdminCommandesPage() {
                 { key: 'statut', header: 'Statut' },
                 { key: 'created_at', header: 'Date', format: (r) => formatDate(r.created_at as string) },
                 { key: 'destinataire_nom', header: 'Destinataire' },
-                { key: 'telephone', header: 'Telephone' },
+                { key: 'telephone', header: 'Téléphone' },
                 { key: 'ville', header: 'Ville' },
                 { key: 'montant_total', header: 'Montant', format: (r) => String(r.montant_total) },
                 { key: '', header: 'Media Buyer', format: (r) => (r as unknown as { user?: { nom: string } }).user?.nom ?? '' },

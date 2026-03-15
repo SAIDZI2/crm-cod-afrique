@@ -92,7 +92,7 @@ export default function CallCentreDashboard() {
           subtitle="A effectuer"
         />
         <KpiCard
-          label="Confirmes aujourd'hui"
+          label="Confirmés aujourd'hui"
           value={stats.confirme}
           color="border-l-green-500"
           subtitle="Commandes validees"

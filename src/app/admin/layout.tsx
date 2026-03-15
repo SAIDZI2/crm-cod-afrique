@@ -8,8 +8,8 @@ import { LoadingPage } from '@/hooks/use-supabase';
 const sidebarItems = [
   { label: 'Dashboard', href: '/admin', icon: 'dashboard' },
   { label: 'Commandes', href: '/admin/commandes', icon: 'historique' },
-  { label: 'Preparation', href: '/admin/preparation', icon: 'offres' },
-  { label: 'Tournees', href: '/admin/tournees', icon: 'tournee' },
+  { label: 'Préparation', href: '/admin/preparation', icon: 'offres' },
+  { label: 'Tournées', href: '/admin/tournees', icon: 'tournee' },
   { label: 'Utilisateurs', href: '/admin/utilisateurs', icon: 'equipe' },
   { label: 'Commissions', href: '/admin/commissions', icon: 'commissions' },
   { label: 'Paiements', href: '/admin/paiements', icon: 'balance' },

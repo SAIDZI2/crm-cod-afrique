@@ -7,7 +7,7 @@ import { LoadingPage } from '@/hooks/use-supabase';
 
 const sidebarItems = [
   { label: 'Dashboard', href: '/livreur/dashboard', icon: 'dashboard' },
-  { label: 'Ma Tournee', href: '/livreur/tournee', icon: 'tournee' },
+  { label: 'Ma Tournée', href: '/livreur/tournee', icon: 'tournee' },
   { label: 'Cash', href: '/livreur/cash', icon: 'cash' },
   { label: 'Retours', href: '/livreur/retours', icon: 'retours' },
   { label: 'Historique', href: '/livreur/historique', icon: 'historique' },

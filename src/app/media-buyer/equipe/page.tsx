@@ -46,7 +46,7 @@ export default function EquipePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Mon Equipe</h1>
+        <h1 className="text-2xl font-bold">Mon Équipe</h1>
         <Badge variant="outline" className="text-sm">
           {members.length} membre{members.length > 1 ? 's' : ''}
         </Badge>
