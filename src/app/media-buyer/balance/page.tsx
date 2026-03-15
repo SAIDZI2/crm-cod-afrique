@@ -90,7 +90,7 @@ export default function BalancePage() {
       return;
     }
     if (!methode) {
-      toast.error('Veuillez selectionner une methode de paiement.');
+      toast.error('Veuillez sélectionner une méthode de paiement.');
       return;
     }
     setRetraitLoading(true);
@@ -152,10 +152,10 @@ export default function BalancePage() {
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium">Methode de paiement</Label>
+                <Label className="text-sm font-medium">Méthode de paiement</Label>
                 <Select value={methode} onValueChange={(val) => val && setMethode(val)}>
                   <SelectTrigger className="mt-1 w-full">
-                    <SelectValue placeholder="Selectionner..." />
+                    <SelectValue placeholder="Sélectionner..." />
                   </SelectTrigger>
                   <SelectContent>
                     {methodeOptions.map((m) => (
@@ -316,8 +316,8 @@ export default function BalancePage() {
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Montant</TableHead>
-                    <TableHead>Methode</TableHead>
-                    <TableHead>Reference</TableHead>
+                    <TableHead>Méthode</TableHead>
+                    <TableHead>Référence</TableHead>
                     <TableHead>Statut</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -350,7 +350,7 @@ export default function BalancePage() {
               </Table>
               {paiements.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  Aucun retrait effectue.
+                  Aucun retrait effectué.
                 </div>
               )}
             </CardContent>

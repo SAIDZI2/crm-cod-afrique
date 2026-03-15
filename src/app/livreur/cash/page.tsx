@@ -50,7 +50,7 @@ export default function LivreurCashPage() {
     try {
       await closeTournee(tourneeEnCours.id);
       setShowCloture(false);
-      setFeedback({ type: 'success', message: 'Tournee cloturee avec succes.' });
+      setFeedback({ type: 'success', message: 'Tournée clôturée avec succès.' });
       refetchTc();
       refetchTournee();
     } catch (err) {
@@ -75,7 +75,7 @@ export default function LivreurCashPage() {
       });
       setShowRemise(false);
       setMontantRemise('');
-      setFeedback({ type: 'success', message: 'Remise enregistree avec succes.' });
+      setFeedback({ type: 'success', message: 'Remise enregistrée avec succès.' });
       refetchRemises();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -123,7 +123,7 @@ export default function LivreurCashPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard label="Cash Theorique Du" value={formatCurrency(stats.cashTheorique)} color="border-l-blue-500" subtitle="Montant attendu" />
         <KpiCard label="Cash Collecte" value={formatCurrency(stats.cashCollecte)} color="border-l-green-500" subtitle="Reellement encaisse" />
-        <KpiCard label="Ecart" value={formatCurrency(stats.ecart)} color={stats.ecart === 0 ? 'border-l-green-500' : 'border-l-red-500'} subtitle={stats.ecart === 0 ? 'Aucun ecart' : 'A justifier'} />
+        <KpiCard label="Ecart" value={formatCurrency(stats.ecart)} color={stats.ecart === 0 ? 'border-l-green-500' : 'border-l-red-500'} subtitle={stats.ecart === 0 ? 'Aucun écart' : 'A justifier'} />
         <KpiCard label="Cash Deja Remis" value={formatCurrency(stats.cashDejaRemis)} color="border-l-purple-500" subtitle={`${remisesCash.length} remise(s)`} />
         <KpiCard label="Cash Restant" value={formatCurrency(stats.cashRestant)} color={stats.cashRestant > 0 ? 'border-l-orange-500' : 'border-l-green-500'} subtitle="A remettre" />
       </div>
@@ -171,7 +171,7 @@ export default function LivreurCashPage() {
               {stats.ecart !== 0 && (
                 <div className="flex items-center gap-2 text-sm text-yellow-700 bg-yellow-50 p-3 rounded-lg">
                   <AlertTriangle className="w-4 h-4" />
-                  Un ecart de {formatCurrency(stats.ecart)} a ete detecte.
+                  Un écart de {formatCurrency(stats.ecart)} a été détecté.
                 </div>
               )}
               <Button

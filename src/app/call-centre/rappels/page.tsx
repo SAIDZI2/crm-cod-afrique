@@ -21,7 +21,7 @@ import type { StatutRappel } from '@/lib/types';
 
 const statutRappelConfig: Record<StatutRappel, { label: string; color: string }> = {
   en_attente: { label: 'En attente', color: 'bg-yellow-100 text-yellow-700' },
-  effectue: { label: 'Effectue', color: 'bg-green-100 text-green-700' },
+  effectue: { label: 'Effectué', color: 'bg-green-100 text-green-700' },
   manque: { label: 'Manque', color: 'bg-red-100 text-red-700' },
 };
 
@@ -34,7 +34,7 @@ export default function RappelsPage() {
     setUpdatingId(id);
     try {
       await updateRappelStatut(id, statut);
-      toast.success(`Rappel marque comme ${statut === 'effectue' ? 'effectue' : 'manque'}.`);
+      toast.success(`Rappel marqué comme ${statut === 'effectue' ? 'effectué' : 'manqué'}.`);
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
@@ -91,7 +91,7 @@ export default function RappelsPage() {
               {overdueCount} rappel{overdueCount > 1 ? 's' : ''} en retard
             </p>
             <p className="text-sm text-red-600">
-              Ces rappels auraient du etre effectues. Traitez-les en priorite.
+              Ces rappels auraient dû être effectués. Traitez-les en priorité.
             </p>
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function RappelsPage() {
                 <SelectContent>
                   <SelectItem value="tous">Tous les statuts</SelectItem>
                   <SelectItem value="en_attente">En attente</SelectItem>
-                  <SelectItem value="effectue">Effectue</SelectItem>
+                  <SelectItem value="effectue">Effectué</SelectItem>
                   <SelectItem value="manque">Manque</SelectItem>
                 </SelectContent>
               </Select>
@@ -125,7 +125,7 @@ export default function RappelsPage() {
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p>Aucun rappel pour les filtres selectionnes.</p>
+              <p>Aucun rappel pour les filtres sélectionnés.</p>
             </CardContent>
           </Card>
         )}
@@ -227,7 +227,7 @@ export default function RappelsPage() {
                                   disabled={updatingId === rappel.id}
                                 >
                                   <CheckCircle className="w-3 h-3" />
-                                  Effectue
+                                  Effectué
                                 </Button>
                                 <Button
                                   size="sm"

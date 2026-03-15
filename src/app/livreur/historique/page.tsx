@@ -14,7 +14,7 @@ import { Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
 const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
   en_preparation: { label: 'En Préparation', bg: 'bg-yellow-100', text: 'text-yellow-800' },
   en_cours: { label: 'En Cours', bg: 'bg-blue-100', text: 'text-blue-800' },
-  cloturee: { label: 'Cloturee', bg: 'bg-green-100', text: 'text-green-800' },
+  cloturee: { label: 'Clôturée', bg: 'bg-green-100', text: 'text-green-800' },
 };
 
 export default function LivreurHistoriquePage() {
@@ -75,7 +75,7 @@ export default function LivreurHistoriquePage() {
         {tournees.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              Aucune tournee enregistree.
+              Aucune tournée enregistrée.
             </CardContent>
           </Card>
         ) : (
@@ -144,7 +144,7 @@ export default function LivreurHistoriquePage() {
                   {isExpanded && (
                     <div className="border-t px-4 pb-4">
                       <div className="pt-4 space-y-3">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Details de la tournee</h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground">Détails de la tournée</h4>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
                             <span className="text-muted-foreground">ID Tournée:</span>
@@ -164,7 +164,7 @@ export default function LivreurHistoriquePage() {
 
                         <Separator />
 
-                        <h4 className="text-sm font-semibold text-muted-foreground">Colis de la tournee</h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground">Colis de la tournée</h4>
                         <div className="space-y-2">
                           {allTc
                             .filter(tc => tc.tournee_id === tournee.id)

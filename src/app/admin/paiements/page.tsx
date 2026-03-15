@@ -65,8 +65,8 @@ export default function AdminPaiementsPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Utilisateur</TableHead>
                 <TableHead>Montant</TableHead>
-                <TableHead>Methode</TableHead>
-                <TableHead>Reference</TableHead>
+                <TableHead>Méthode</TableHead>
+                <TableHead>Référence</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>

@@ -59,7 +59,7 @@ export default function LivreurTourneePage() {
       await handleDeliveryComplete(commandeId);
       setExpandedLivre(null);
       setMontantCollecte('');
-      setFeedback({ type: 'success', message: 'Livraison confirmee avec succes.' });
+      setFeedback({ type: 'success', message: 'Livraison confirmée avec succès.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -89,7 +89,7 @@ export default function LivreurTourneePage() {
       setExpandedRetour(null);
       setMotifRetour('');
       setNoteRetour('');
-      setFeedback({ type: 'success', message: 'Retour declare avec succes.' });
+      setFeedback({ type: 'success', message: 'Retour déclaré avec succès.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -149,7 +149,7 @@ export default function LivreurTourneePage() {
         {filtered.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              Aucun colis dans cette categorie.
+              Aucun colis dans cette catégorie.
             </CardContent>
           </Card>
         )}
@@ -239,7 +239,7 @@ export default function LivreurTourneePage() {
                     </div>
                     <div>
                       <Label htmlFor={`montant-${tc.id}`} className="text-sm font-medium">
-                        Montant reellement collecte
+                        Montant réellement collecté
                       </Label>
                       <Input
                         id={`montant-${tc.id}`}
@@ -269,7 +269,7 @@ export default function LivreurTourneePage() {
 
                 {isRetourExpanded && (
                   <div className="border-t pt-4 space-y-3 bg-red-50 -mx-4 px-4 pb-4">
-                    <h3 className="font-semibold text-red-800">Declarer un retour</h3>
+                    <h3 className="font-semibold text-red-800">Déclarer un retour</h3>
                     <div>
                       <Label className="text-sm font-medium">Motif du retour</Label>
                       <Select
@@ -277,7 +277,7 @@ export default function LivreurTourneePage() {
                         onValueChange={(val) => val && setMotifRetour(val as MotifRetour)}
                       >
                         <SelectTrigger className="mt-1 min-h-12 w-full">
-                          <SelectValue placeholder="Selectionner un motif" />
+                          <SelectValue placeholder="Sélectionner un motif" />
                         </SelectTrigger>
                         <SelectContent>
                           {MOTIFS_RETOUR.map(m => (

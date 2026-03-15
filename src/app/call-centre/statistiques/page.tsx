@@ -125,7 +125,7 @@ export default function StatistiquesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Statistiques</h1>
-        <p className="text-sm text-gray-500 mt-1">Performances individuelles et equipe</p>
+        <p className="text-sm text-gray-500 mt-1">Performances individuelles et équipe</p>
       </div>
 
       {/* Personal Stats */}
@@ -162,11 +162,11 @@ export default function StatistiquesPage() {
               </div>
               <div className="bg-red-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-red-700">{personalStats.echoues}</p>
-                <p className="text-xs text-muted-foreground">Echoues</p>
+                <p className="text-xs text-muted-foreground">Échoués</p>
               </div>
               <div className="bg-orange-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-orange-700">{personalStats.reportes}</p>
-                <p className="text-xs text-muted-foreground">Reportes en cours</p>
+                <p className="text-xs text-muted-foreground">Reportés en cours</p>
               </div>
               <div className="bg-purple-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-purple-700">{personalStats.upsells}</p>
@@ -199,11 +199,11 @@ export default function StatistiquesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Agent</TableHead>
-                <TableHead className="text-center">Total traites</TableHead>
+                <TableHead className="text-center">Total traités</TableHead>
                 <TableHead className="text-center">Confirmés</TableHead>
                 <TableHead className="text-center">Taux confirmation</TableHead>
-                <TableHead className="text-center">Echoues</TableHead>
-                <TableHead className="text-center">Reportes</TableHead>
+                <TableHead className="text-center">Échoués</TableHead>
+                <TableHead className="text-center">Reportés</TableHead>
                 <TableHead className="text-center">Upsells</TableHead>
                 <TableHead className="text-center">Temps moyen</TableHead>
                 <TableHead className="text-center">Appels/h</TableHead>
@@ -252,7 +252,7 @@ export default function StatistiquesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Confirmés vs Echoues vs Reportes par jour</CardTitle>
+            <CardTitle className="text-base">Confirmés vs Échoués vs Reportés par jour</CardTitle>
           </CardHeader>
           <CardContent>
             <BarChart
@@ -260,8 +260,8 @@ export default function StatistiquesPage() {
               xKey="jour"
               bars={[
                 { key: 'confirmes', color: '#22c55e', label: 'Confirmés' },
-                { key: 'echoues', color: '#ef4444', label: 'Echoues' },
-                { key: 'reportes', color: '#f97316', label: 'Reportes' },
+                { key: 'echoues', color: '#ef4444', label: 'Échoués' },
+                { key: 'reportes', color: '#f97316', label: 'Reportés' },
               ]}
             />
           </CardContent>

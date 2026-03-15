@@ -47,7 +47,7 @@ export default function LoginPage() {
         .single();
 
       if (!crmUser) {
-        setError('Aucun compte CRM associe a cet email.');
+        setError('Aucun compte CRM associé à cet email.');
         await supabase.auth.signOut();
         setIsLoading(false);
         return;
@@ -71,7 +71,7 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError('Erreur de connexion demo. Verifiez que les comptes sont crees dans Supabase Auth.');
+      setError('Erreur de connexion demo. Vérifiez que les comptes sont créés dans Supabase Auth.');
       setIsLoading(false);
       return;
     }

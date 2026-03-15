@@ -137,7 +137,7 @@ export default function NouvelleCommandePage() {
               <Label htmlFor="ville">Ville *</Label>
               <Select value={form.ville} onValueChange={(v) => handleChange('ville', v ?? '')}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selectionner une ville" />
+                  <SelectValue placeholder="Sélectionner une ville" />
                 </SelectTrigger>
                 <SelectContent>
                   {VILLES_RDC.map((ville) => (
@@ -160,7 +160,7 @@ export default function NouvelleCommandePage() {
               <Label htmlFor="produit">Produit *</Label>
               <Select value={form.produit_id} onValueChange={(v) => handleChange('produit_id', v ?? '')}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selectionner un produit" />
+                  <SelectValue placeholder="Sélectionner un produit" />
                 </SelectTrigger>
                 <SelectContent>
                   {produitsList.map((p) => (

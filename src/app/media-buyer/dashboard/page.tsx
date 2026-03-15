@@ -24,17 +24,17 @@ export default function MediaBuyerDashboard() {
   const depensesList = depenses ?? [];
 
   const kpiCards = [
-    { label: 'Leads Crees', value: k.total, color: 'border-orange-500' },
+    { label: 'Leads Créés', value: k.total, color: 'border-orange-500' },
     { label: 'Traites', value: k.total - k.nouveau, color: 'border-green-500' },
     { label: 'Nouveaux', value: k.nouveau, color: 'border-blue-500' },
     { label: 'Confirmés', value: k.confirme, color: 'border-green-500' },
     { label: 'En Préparation', value: k.en_preparation, color: 'border-yellow-500' },
     { label: 'Expédiés', value: k.expedie, color: 'border-indigo-500' },
-    { label: 'Echoues', value: k.echoue, color: 'border-red-500' },
-    { label: 'Reportes', value: k.reporte, color: 'border-purple-500' },
+    { label: 'Échoués', value: k.echoue, color: 'border-red-500' },
+    { label: 'Reportés', value: k.reporte, color: 'border-purple-500' },
     { label: 'En Retour', value: k.en_retour, color: 'border-orange-500' },
-    { label: 'Retournes', value: k.retourne, color: 'border-gray-500' },
-    { label: 'Livres', value: k.livre, color: 'border-emerald-500' },
+    { label: 'Retournés', value: k.retourne, color: 'border-gray-500' },
+    { label: 'Livrés', value: k.livre, color: 'border-emerald-500' },
   ];
 
   const enCours = k.confirme + k.en_preparation + k.expedie;
@@ -51,11 +51,11 @@ export default function MediaBuyerDashboard() {
     { name: 'Confirmés', value: k.confirme, color: '#22c55e' },
     { name: 'En Préparation', value: k.en_preparation, color: '#eab308' },
     { name: 'Expédiés', value: k.expedie, color: '#6366f1' },
-    { name: 'Livres', value: k.livre, color: '#10b981' },
-    { name: 'Echoues', value: k.echoue, color: '#ef4444' },
-    { name: 'Reportes', value: k.reporte, color: '#a855f7' },
+    { name: 'Livrés', value: k.livre, color: '#10b981' },
+    { name: 'Échoués', value: k.echoue, color: '#ef4444' },
+    { name: 'Reportés', value: k.reporte, color: '#a855f7' },
     { name: 'En Retour', value: k.en_retour, color: '#f97316' },
-    { name: 'Retournes', value: k.retourne, color: '#6b7280' },
+    { name: 'Retournés', value: k.retourne, color: '#6b7280' },
   ].filter((d) => d.value > 0);
 
   const lineData = (() => {
@@ -98,7 +98,7 @@ export default function MediaBuyerDashboard() {
               <span className="font-semibold">{enCours}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Livres / Total</span>
+              <span className="text-sm text-muted-foreground">Livrés / Total</span>
               <span className="font-semibold">
                 {k.livre} / {k.total}
               </span>
@@ -116,19 +116,19 @@ export default function MediaBuyerDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Depenses Ads</span>
+              <span className="text-sm text-muted-foreground">Total Dépenses Ads</span>
               <span className="font-semibold">{formatCurrency(totalDepenses)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Du (Commissions)</span>
+              <span className="text-sm text-muted-foreground">Total Dû (Commissions)</span>
               <span className="font-semibold">{formatCurrency(totalDu)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Paye</span>
+              <span className="text-sm text-muted-foreground">Total Payé</span>
               <span className="font-semibold text-green-600">{formatCurrency(totalPaye)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Reste a Payer</span>
+              <span className="text-sm text-muted-foreground">Reste à Payer</span>
               <span className="font-semibold text-orange-600">{formatCurrency(resteAPayer)}</span>
             </div>
           </CardContent>
@@ -139,7 +139,7 @@ export default function MediaBuyerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Repartition des Statuts</CardTitle>
+            <CardTitle>Répartition des Statuts</CardTitle>
           </CardHeader>
           <CardContent>
             <DonutChart data={donutData} />
@@ -156,7 +156,7 @@ export default function MediaBuyerDashboard() {
               xKey="date"
               lines={[
                 { key: 'leads', color: '#f97316', label: 'Leads' },
-                { key: 'livres', color: '#10b981', label: 'Livres' },
+                { key: 'livres', color: '#10b981', label: 'Livrés' },
               ]}
             />
           </CardContent>

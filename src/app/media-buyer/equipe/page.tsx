@@ -27,7 +27,7 @@ export default function EquipePage() {
   const handleToggleActif = async (memberId: string, currentActif: boolean) => {
     try {
       await updateUser(memberId, { actif: !currentActif } as Record<string, unknown>);
-      toast.success(!currentActif ? 'Membre active.' : 'Membre desactive.');
+      toast.success(!currentActif ? 'Membre activé.' : 'Membre désactivé.');
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
@@ -106,7 +106,7 @@ export default function EquipePage() {
           </Table>
           {members.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              Aucun membre dans votre equipe.
+              Aucun membre dans votre équipe.
             </div>
           )}
         </CardContent>

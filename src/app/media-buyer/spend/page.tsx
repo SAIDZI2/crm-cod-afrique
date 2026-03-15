@@ -72,7 +72,7 @@ export default function SpendPage() {
         date_depense: newDepense.date_depense,
         note: newDepense.note || undefined,
       });
-      toast.success('Depense ajoutee!');
+      toast.success('Dépense ajoutée !');
       setNewDepense({ produit_id: '', montant: '', note: '', date_depense: '' });
       setDialogOpen(false);
       refetch();
@@ -84,14 +84,14 @@ export default function SpendPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Gestion des Depenses Publicitaires</h1>
+        <h1 className="text-2xl font-bold">Gestion des Dépenses Publicitaires</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger>
-            <Button>+ Nouvelle Depense</Button>
+            <Button>+ Nouvelle Dépense</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Ajouter une Depense</DialogTitle>
+              <DialogTitle>Ajouter une Dépense</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
@@ -103,7 +103,7 @@ export default function SpendPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selectionner un produit" />
+                    <SelectValue placeholder="Sélectionner un produit" />
                   </SelectTrigger>
                   <SelectContent>
                     {produits.map((p) => (
@@ -157,27 +157,27 @@ export default function SpendPage() {
 
       {/* KPI Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <KpiCard label="Depense Totale" value={formatCurrency(totalDepense)} color="border-red-500" />
+        <KpiCard label="Dépense Totale" value={formatCurrency(totalDepense)} color="border-red-500" />
         <KpiCard label="Leads" value={totalLeads} color="border-blue-500" />
-        <KpiCard label="Livres" value={totalLivres} color="border-green-500" />
+        <KpiCard label="Livrés" value={totalLivres} color="border-green-500" />
         <KpiCard
-          label="CPL (Cout/Lead)"
+          label="CPL (Coût/Lead)"
           value={formatCurrency(cpl)}
           color="border-orange-500"
-          subtitle="Cout par Lead"
+          subtitle="Coût par Lead"
         />
         <KpiCard
-          label="CPD (Cout/Delivery)"
+          label="CPD (Coût/Delivery)"
           value={formatCurrency(cpd)}
           color="border-purple-500"
-          subtitle="Cout par Livraison"
+          subtitle="Coût par Livraison"
         />
       </div>
 
       {/* Expenses Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Historique des Depenses</CardTitle>
+          <CardTitle>Historique des Dépenses</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
