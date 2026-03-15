@@ -121,7 +121,7 @@ CREATE POLICY commandes_select_via_tournee ON public.commandes
     AND EXISTS (
       SELECT 1 FROM tournee_commandes tc
       JOIN tournees t ON t.id = tc.tournee_id
-      WHERE tc.commande_id = id
+      WHERE tc.commande_id = commandes.id
       AND t.livreur_id = get_my_crm_id()
     )
   );
@@ -134,7 +134,7 @@ CREATE POLICY commandes_update_via_tournee ON public.commandes
     AND EXISTS (
       SELECT 1 FROM tournee_commandes tc
       JOIN tournees t ON t.id = tc.tournee_id
-      WHERE tc.commande_id = id
+      WHERE tc.commande_id = commandes.id
       AND t.livreur_id = get_my_crm_id()
     )
   )
@@ -143,7 +143,7 @@ CREATE POLICY commandes_update_via_tournee ON public.commandes
     AND EXISTS (
       SELECT 1 FROM tournee_commandes tc
       JOIN tournees t ON t.id = tc.tournee_id
-      WHERE tc.commande_id = id
+      WHERE tc.commande_id = commandes.id
       AND t.livreur_id = get_my_crm_id()
     )
   );
