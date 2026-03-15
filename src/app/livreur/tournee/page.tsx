@@ -11,16 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getAllTourneeCommandes } from '@/lib/supabase/queries';
+import { getAllTourneeCommandes, updateTourneeCommande, updateCommandeStatut, createRetour } from '@/lib/supabase/queries';
 import { formatCurrency, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
-import { Phone, Package, CheckCircle, RotateCcw, MapPin } from 'lucide-react';
+import { Phone, Package, CheckCircle, RotateCcw, MapPin, Loader2 } from 'lucide-react';
 
 type FilterTab = 'tous' | 'en_cours' | 'livre' | 'retourne';
 
 export default function LivreurTourneePage() {
   const { user } = useAuth();
-  const { data: tcData, loading } = useSupabase(
+  const { data: tcData, loading, refetch } = useSupabase(
     () => (user ? getAllTourneeCommandes(user.id) : Promise.resolve([])),
     [user?.id]
   );
@@ -30,6 +30,8 @@ export default function LivreurTourneePage() {
   const [montantCollecte, setMontantCollecte] = useState<string>('');
   const [motifRetour, setMotifRetour] = useState<MotifRetour | ''>('');
   const [noteRetour, setNoteRetour] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   if (loading) return <LoadingPage />;
   const commandes = tcData ?? [];
@@ -44,15 +46,55 @@ export default function LivreurTourneePage() {
       .reduce((sum, c) => sum + (c.montant_collecte ?? 0), 0),
   };
 
-  const handleConfirmLivre = (id: string) => {
-    setExpandedLivre(null);
-    setMontantCollecte('');
+  const handleConfirmLivre = async (tcId: string, commandeId: string) => {
+    setActionLoading(tcId);
+    setFeedback(null);
+    try {
+      await updateTourneeCommande(tcId, {
+        statut_livraison: 'livre',
+        montant_collecte: Number(montantCollecte) || 0,
+        heure_livraison: new Date().toISOString(),
+      });
+      await updateCommandeStatut(commandeId, 'livre');
+      setExpandedLivre(null);
+      setMontantCollecte('');
+      setFeedback({ type: 'success', message: 'Livraison confirmee avec succes.' });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleConfirmRetour = (id: string) => {
-    setExpandedRetour(null);
-    setMotifRetour('');
-    setNoteRetour('');
+  const handleConfirmRetour = async (tcId: string, commandeId: string) => {
+    if (!motifRetour) return;
+    setActionLoading(tcId);
+    setFeedback(null);
+    try {
+      await updateTourneeCommande(tcId, {
+        statut_livraison: 'retourne',
+        motif_retour: motifRetour as MotifRetour,
+      });
+      await createRetour({
+        commande_id: commandeId,
+        livreur_id: user!.id,
+        motif: motifRetour as MotifRetour,
+        note: noteRetour || undefined,
+        recu_au_depot: false,
+        date_retour: new Date().toISOString(),
+      });
+      await updateCommandeStatut(commandeId, 'retourne');
+      setExpandedRetour(null);
+      setMotifRetour('');
+      setNoteRetour('');
+      setFeedback({ type: 'success', message: 'Retour declare avec succes.' });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const filterTabs: { key: FilterTab; label: string; count: number }[] = [
@@ -81,6 +123,12 @@ export default function LivreurTourneePage() {
           {stats.livre} livres / {stats.total} total — Cash: {formatCurrency(stats.cashTotal)}
         </p>
       </div>
+
+      {feedback && (
+        <div className={`p-3 rounded-lg text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {feedback.message}
+        </div>
+      )}
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {filterTabs.map(tab => (
@@ -205,8 +253,10 @@ export default function LivreurTourneePage() {
                     <div className="flex gap-2">
                       <Button
                         className="flex-1 min-h-12 bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => handleConfirmLivre(tc.id)}
+                        onClick={() => handleConfirmLivre(tc.id, cmd.id)}
+                        disabled={actionLoading === tc.id}
                       >
+                        {actionLoading === tc.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         Confirmer livraison
                       </Button>
                       <Button variant="outline" className="min-h-12" onClick={() => setExpandedLivre(null)}>
@@ -249,9 +299,10 @@ export default function LivreurTourneePage() {
                     <div className="flex gap-2">
                       <Button
                         className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white"
-                        onClick={() => handleConfirmRetour(tc.id)}
-                        disabled={!motifRetour}
+                        onClick={() => handleConfirmRetour(tc.id, cmd.id)}
+                        disabled={!motifRetour || actionLoading === tc.id}
                       >
+                        {actionLoading === tc.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         Confirmer retour
                       </Button>
                       <Button variant="outline" className="min-h-12" onClick={() => setExpandedRetour(null)}>

@@ -21,19 +21,25 @@ import {
 } from '@/components/ui/dialog';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getCommandeById, checkBlacklist, updateCommandeStatut, createAppel, createRappel } from '@/lib/supabase/queries';
+import {
+  getCommandeById,
+  updateCommandeStatut,
+  createAppel,
+  createRappel,
+  addToBlacklist,
+} from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
 import {
   Phone,
   CheckCircle,
   XCircle,
   Clock,
-  Edit,
   Ban,
   ArrowLeft,
   ChevronDown,
   ChevronUp,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 export default function CommandeDetailPage() {
@@ -47,8 +53,10 @@ export default function CommandeDetailPage() {
   const [reportTime, setReportTime] = useState('');
   const [scriptOpen, setScriptOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const { data: commande, loading: l1 } = useSupabase(
+  const { data: commande, loading: l1, refetch } = useSupabase(
     () => getCommandeById(commandeId),
     [commandeId]
   );
@@ -71,6 +79,89 @@ export default function CommandeDetailPage() {
 
   const appels = commande.appels ?? [];
   const firstProduct = commande.commande_produits?.[0]?.produit;
+
+  async function handleAction(action: string, handler: () => Promise<void>) {
+    setActionLoading(action);
+    setFeedback(null);
+    try {
+      await handler();
+      setFeedback({ type: 'success', message: `Action "${action}" effectuee avec succes.` });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleConfirmer() {
+    await handleAction('Confirmer', async () => {
+      await updateCommandeStatut(commande!.id, 'confirme', user?.id);
+      await createAppel({
+        commande_id: commande!.id,
+        agent_id: user!.id,
+        resultat: 'confirme',
+        duree_secondes: 0,
+        note: note.trim() || undefined,
+      });
+    });
+  }
+
+  async function handleEchoue() {
+    await handleAction('Echoue', async () => {
+      await updateCommandeStatut(commande!.id, 'echoue', user?.id);
+      await createAppel({
+        commande_id: commande!.id,
+        agent_id: user!.id,
+        resultat: 'echoue',
+        duree_secondes: 0,
+        note: note.trim() || undefined,
+      });
+    });
+  }
+
+  async function handleReporter() {
+    if (!reportDate || !reportTime) return;
+    await handleAction('Reporter', async () => {
+      const dateRappel = new Date(`${reportDate}T${reportTime}`).toISOString();
+      await createRappel({
+        commande_id: commande!.id,
+        agent_id: user!.id,
+        date_rappel: dateRappel,
+        note: note.trim() || undefined,
+      });
+      await updateCommandeStatut(commande!.id, 'reporte', user?.id);
+      setReportDialogOpen(false);
+      setReportDate('');
+      setReportTime('');
+    });
+  }
+
+  async function handleBlacklister() {
+    await handleAction('Blacklister', async () => {
+      await addToBlacklist({
+        telephone: commande!.telephone,
+        motif: `Blackliste depuis commande ${commande!.id}`,
+        user_id: user?.id,
+      });
+    });
+  }
+
+  async function handleSaveNote() {
+    if (!note.trim()) return;
+    await handleAction('Note', async () => {
+      await createAppel({
+        commande_id: commande!.id,
+        agent_id: user!.id,
+        resultat: 'pas_de_reponse',
+        duree_secondes: 0,
+        note: note.trim(),
+      });
+      setNote('');
+    });
+  }
+
+  const isLoading = (action: string) => actionLoading === action;
 
   const resultatLabels: Record<string, string> = {
     confirme: 'Confirme',
@@ -109,6 +200,13 @@ export default function CommandeDetailPage() {
         <StatusBadge statut={commande.statut} />
       </div>
 
+      {/* Feedback */}
+      {feedback && (
+        <div className={`p-3 rounded-lg text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {feedback.message}
+        </div>
+      )}
+
       {/* Split Layout: Client Info + Order Detail */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Panel - Client Info */}
@@ -126,10 +224,12 @@ export default function CommandeDetailPage() {
                 <p className="text-xs text-muted-foreground">Telephone</p>
                 <div className="flex items-center gap-2">
                   <p className="font-medium font-mono">{commande.telephone}</p>
-                  <Button size="sm" variant="outline" className="h-7 gap-1">
-                    <Phone className="w-3 h-3" />
-                    Appeler
-                  </Button>
+                  <a href={`tel:${commande.telephone}`}>
+                    <Button size="sm" variant="outline" className="h-7 gap-1">
+                      <Phone className="w-3 h-3" />
+                      Appeler
+                    </Button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -221,20 +321,29 @@ export default function CommandeDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button className="bg-green-600 hover:bg-green-700 gap-2">
-              <CheckCircle className="w-4 h-4" />
+            <Button
+              className="bg-green-600 hover:bg-green-700 gap-2"
+              onClick={handleConfirmer}
+              disabled={!!actionLoading}
+            >
+              {isLoading('Confirmer') ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Confirmer
             </Button>
 
-            <Button variant="destructive" className="gap-2">
-              <XCircle className="w-4 h-4" />
+            <Button
+              variant="destructive"
+              className="gap-2"
+              onClick={handleEchoue}
+              disabled={!!actionLoading}
+            >
+              {isLoading('Echoue') ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
               Echoue
             </Button>
 
             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
               <DialogTrigger
                 render={
-                  <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
+                  <Button className="bg-orange-500 hover:bg-orange-600 gap-2" disabled={!!actionLoading}>
                     <Clock className="w-4 h-4" />
                     Reporter
                   </Button>
@@ -268,21 +377,23 @@ export default function CommandeDetailPage() {
                 <DialogFooter>
                   <Button
                     className="bg-orange-500 hover:bg-orange-600"
-                    onClick={() => setReportDialogOpen(false)}
+                    onClick={handleReporter}
+                    disabled={!reportDate || !reportTime || !!actionLoading}
                   >
+                    {isLoading('Reporter') ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     Confirmer le rappel
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
-            <Button className="bg-yellow-500 hover:bg-yellow-600 gap-2">
-              <Edit className="w-4 h-4" />
-              Modifier
-            </Button>
-
-            <Button variant="outline" className="bg-gray-900 text-white hover:bg-gray-800 gap-2">
-              <Ban className="w-4 h-4" />
+            <Button
+              variant="outline"
+              className="bg-gray-900 text-white hover:bg-gray-800 gap-2"
+              onClick={handleBlacklister}
+              disabled={!!actionLoading}
+            >
+              {isLoading('Blacklister') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
               Blacklister
             </Button>
 
@@ -306,7 +417,12 @@ export default function CommandeDetailPage() {
               onChange={(e) => setNote(e.target.value)}
               rows={3}
             />
-            <Button size="sm" disabled={!note.trim()}>
+            <Button
+              size="sm"
+              disabled={!note.trim() || !!actionLoading}
+              onClick={handleSaveNote}
+            >
+              {isLoading('Note') ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Enregistrer la note
             </Button>
           </div>

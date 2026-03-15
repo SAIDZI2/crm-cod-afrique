@@ -10,25 +10,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
-import { getAllTourneeCommandes } from '@/lib/supabase/queries';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  getAllTourneeCommandes, updateTourneeCommande, updateCommandeStatut,
+  createRetour, createAppel
+} from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import {
   Phone, MapPin, Package, ArrowLeft, CheckCircle,
-  RotateCcw, Clock, AlertTriangle, FileText, Hash
+  RotateCcw, Clock, AlertTriangle, FileText, Hash, Loader2
 } from 'lucide-react';
 
 export default function LivreurColisDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const commandeId = params.id as string;
 
   const [action, setAction] = useState<'none' | 'livre' | 'retour' | 'reporter' | 'probleme'>('none');
   const [montantCollecte, setMontantCollecte] = useState('');
   const [motifRetour, setMotifRetour] = useState<MotifRetour | ''>('');
   const [noteAction, setNoteAction] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const { data: tcData, loading } = useSupabase(() => getAllTourneeCommandes(), []);
+  const { data: tcData, loading, refetch } = useSupabase(() => getAllTourneeCommandes(), []);
 
   if (loading) return <LoadingPage />;
   const allTc = tcData ?? [];
@@ -63,11 +70,100 @@ export default function LivreurColisDetailPage() {
     );
   }
 
-  const handleConfirm = () => {
+  const resetForm = () => {
     setAction('none');
     setMontantCollecte('');
     setMotifRetour('');
     setNoteAction('');
+  };
+
+  const handleConfirmLivre = async () => {
+    if (!tc) return;
+    setActionLoading(true);
+    setFeedback(null);
+    try {
+      await updateTourneeCommande(tc.id, {
+        statut_livraison: 'livre',
+        montant_collecte: Number(montantCollecte) || 0,
+        heure_livraison: new Date().toISOString(),
+      });
+      await updateCommandeStatut(commande!.id, 'livre');
+      resetForm();
+      setFeedback({ type: 'success', message: 'Livraison confirmee avec succes.' });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmRetour = async () => {
+    if (!tc || !motifRetour || !user) return;
+    setActionLoading(true);
+    setFeedback(null);
+    try {
+      await updateTourneeCommande(tc.id, {
+        statut_livraison: 'retourne',
+        motif_retour: motifRetour as MotifRetour,
+      });
+      await createRetour({
+        commande_id: commande!.id,
+        livreur_id: user.id,
+        motif: motifRetour as MotifRetour,
+        note: noteAction || undefined,
+        recu_au_depot: false,
+        date_retour: new Date().toISOString(),
+      });
+      await updateCommandeStatut(commande!.id, 'retourne');
+      resetForm();
+      setFeedback({ type: 'success', message: 'Retour declare avec succes.' });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmReporter = async () => {
+    if (!tc) return;
+    setActionLoading(true);
+    setFeedback(null);
+    try {
+      await updateTourneeCommande(tc.id, { statut_livraison: 'reporte', note: noteAction || undefined });
+      await updateCommandeStatut(commande!.id, 'reporte');
+      resetForm();
+      setFeedback({ type: 'success', message: 'Report enregistre avec succes.' });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmProbleme = async () => {
+    if (!user || !noteAction) return;
+    setActionLoading(true);
+    setFeedback(null);
+    try {
+      await createAppel({
+        commande_id: commande!.id,
+        agent_id: user.id,
+        date_appel: new Date().toISOString(),
+        duree_secondes: 0,
+        resultat: 'pas_de_reponse',
+        note: noteAction,
+      });
+      resetForm();
+      setFeedback({ type: 'success', message: 'Probleme signale avec succes.' });
+      refetch();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -76,6 +172,12 @@ export default function LivreurColisDetailPage() {
         <ArrowLeft className="w-4 h-4 mr-2" />
         Retour a la tournee
       </Button>
+
+      {feedback && (
+        <div className={`p-3 rounded-lg text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {feedback.message}
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-4">
@@ -254,7 +356,8 @@ export default function LivreurColisDetailPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1 min-h-12 bg-green-600 hover:bg-green-700 text-white text-base" onClick={handleConfirm}>
+              <Button className="flex-1 min-h-12 bg-green-600 hover:bg-green-700 text-white text-base" onClick={handleConfirmLivre} disabled={actionLoading}>
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Confirmer
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>
@@ -277,7 +380,8 @@ export default function LivreurColisDetailPage() {
               <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Details supplementaires..." />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white" onClick={handleConfirm}>
+              <Button className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white" onClick={handleConfirmRetour} disabled={actionLoading}>
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Confirmer retour
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>
@@ -297,7 +401,8 @@ export default function LivreurColisDetailPage() {
               <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Pourquoi reporter..." />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1 min-h-12 bg-orange-600 hover:bg-orange-700 text-white" onClick={handleConfirm}>
+              <Button className="flex-1 min-h-12 bg-orange-600 hover:bg-orange-700 text-white" onClick={handleConfirmReporter} disabled={actionLoading}>
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Confirmer report
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>
@@ -317,7 +422,8 @@ export default function LivreurColisDetailPage() {
               <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-24" placeholder="Decrivez le probleme..." />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1 min-h-12 bg-yellow-600 hover:bg-yellow-700 text-white" onClick={handleConfirm}>
+              <Button className="flex-1 min-h-12 bg-yellow-600 hover:bg-yellow-700 text-white" onClick={handleConfirmProbleme} disabled={actionLoading || !noteAction}>
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Envoyer
               </Button>
               <Button variant="outline" className="min-h-12" onClick={() => setAction('none')}>

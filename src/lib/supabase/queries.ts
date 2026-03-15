@@ -2,7 +2,8 @@ import { createClient } from './client';
 import type {
   User, Produit, Commande, CommandeProduit, Blacklist,
   Depense, Commission, Appel, Rappel, Tournee,
-  TourneeCommande, RemiseCash, Retour, StatutCommande
+  TourneeCommande, RemiseCash, Retour, StatutCommande,
+  StatutCommission
 } from '../types';
 
 const supabase = createClient();
@@ -423,4 +424,61 @@ export async function createRemiseCash(remise: Partial<RemiseCash>) {
     .single();
   if (error) throw error;
   return data as RemiseCash;
+}
+
+// ============================================
+// COMMISSIONS — MUTATIONS ADMIN
+// ============================================
+export async function updateCommissionStatut(id: string, statut: StatutCommission) {
+  const updateData: Record<string, unknown> = { statut };
+  if (statut === 'approuvee') updateData.date_approbation = new Date().toISOString();
+  if (statut === 'payee') updateData.date_paiement = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('commissions')
+    .update(updateData)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ============================================
+// USERS — MUTATION ADMIN
+// ============================================
+export async function createUser(userData: { nom: string; email: string; role: string; commission_pct?: number }) {
+  const { data, error } = await supabase
+    .from('users')
+    .insert({
+      nom: userData.nom,
+      email: userData.email,
+      role: userData.role,
+      commission_pct: userData.commission_pct ?? 0,
+      password_hash: 'managed_by_supabase_auth',
+      actif: true,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as User;
+}
+
+// ============================================
+// TOURNEES — MUTATIONS
+// ============================================
+export async function closeTournee(tourneeId: string) {
+  const { error } = await supabase
+    .from('tournees')
+    .update({ statut: 'cloturee', date_cloture: new Date().toISOString() })
+    .eq('id', tourneeId);
+  if (error) throw error;
+}
+
+// ============================================
+// COMMANDES — UPDATE GENERIQUE
+// ============================================
+export async function updateCommande(id: string, updates: Partial<Commande>) {
+  const { error } = await supabase
+    .from('commandes')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
 }

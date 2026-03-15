@@ -17,25 +17,72 @@ import {
 } from '@/components/ui/dialog';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getAllTourneeCommandes, getRemisesCash } from '@/lib/supabase/queries';
+import { getAllTourneeCommandes, getRemisesCash, getTourneeEnCours, closeTournee, createRemiseCash } from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime } from '@/lib/constants';
-import { Banknote, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { Banknote, ClipboardCheck, AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function LivreurCashPage() {
   const { user } = useAuth();
-  const { data: tcData, loading: l1 } = useSupabase(
+  const { data: tcData, loading: l1, refetch: refetchTc } = useSupabase(
     () => (user ? getAllTourneeCommandes(user.id) : Promise.resolve([])),
     [user?.id]
   );
-  const { data: remisesData, loading: l2 } = useSupabase(
+  const { data: remisesData, loading: l2, refetch: refetchRemises } = useSupabase(
     () => (user ? getRemisesCash(user.id) : Promise.resolve([])),
+    [user?.id]
+  );
+  const { data: tourneeEnCours, loading: l3, refetch: refetchTournee } = useSupabase(
+    () => (user ? getTourneeEnCours(user.id) : Promise.resolve(null)),
     [user?.id]
   );
   const [showCloture, setShowCloture] = useState(false);
   const [showRemise, setShowRemise] = useState(false);
   const [montantRemise, setMontantRemise] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  if (l1 || l2) return <LoadingPage />;
+  if (l1 || l2 || l3) return <LoadingPage />;
+
+  const handleCloture = async () => {
+    if (!tourneeEnCours) return;
+    setActionLoading('cloture');
+    setFeedback(null);
+    try {
+      await closeTournee(tourneeEnCours.id);
+      setShowCloture(false);
+      setFeedback({ type: 'success', message: 'Tournee cloturee avec succes.' });
+      refetchTc();
+      refetchTournee();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRemise = async () => {
+    if (!user || !montantRemise || Number(montantRemise) <= 0) return;
+    setActionLoading('remise');
+    setFeedback(null);
+    try {
+      await createRemiseCash({
+        livreur_id: user.id,
+        tournee_id: tourneeEnCours?.id,
+        montant_remis: Number(montantRemise),
+        montant_theorique: cashCollecte,
+        ecart: cashCollecte - Number(montantRemise),
+        date_remise: new Date().toISOString(),
+      });
+      setShowRemise(false);
+      setMontantRemise('');
+      setFeedback({ type: 'success', message: 'Remise enregistree avec succes.' });
+      refetchRemises();
+    } catch (err) {
+      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+    } finally {
+      setActionLoading(null);
+    }
+  };
   const allTc = tcData ?? [];
   const remisesCash = remisesData ?? [];
 
@@ -66,6 +113,12 @@ export default function LivreurCashPage() {
           Suivi des encaissements et remises de la journee
         </p>
       </div>
+
+      {feedback && (
+        <div className={`p-3 rounded-lg text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {feedback.message}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard label="Cash Theorique Du" value={formatCurrency(stats.cashTheorique)} color="border-l-blue-500" subtitle="Montant attendu" />
@@ -121,7 +174,12 @@ export default function LivreurCashPage() {
                   Un ecart de {formatCurrency(stats.ecart)} a ete detecte.
                 </div>
               )}
-              <Button className="w-full min-h-12 bg-green-600 hover:bg-green-700 text-white" onClick={() => setShowCloture(false)}>
+              <Button
+                className="w-full min-h-12 bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleCloture}
+                disabled={actionLoading === 'cloture' || !tourneeEnCours}
+              >
+                {actionLoading === 'cloture' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Confirmer la cloture
               </Button>
             </div>
@@ -158,9 +216,10 @@ export default function LivreurCashPage() {
               </div>
               <Button
                 className="w-full min-h-12 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => { setShowRemise(false); setMontantRemise(''); }}
-                disabled={!montantRemise || Number(montantRemise) <= 0}
+                onClick={handleRemise}
+                disabled={!montantRemise || Number(montantRemise) <= 0 || actionLoading === 'remise'}
               >
+                {actionLoading === 'remise' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Confirmer la remise
               </Button>
             </div>
