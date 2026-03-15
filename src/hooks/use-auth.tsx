@@ -25,11 +25,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadProfile() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Use getUser() (server validation) instead of getSession() (local cache)
+        // This is more reliable when navigator.locks is bypassed
+        const { data: { user: authUser } } = await supabase.auth.getUser();
 
-        if (!session?.user?.email) {
+        if (cancelled) return;
+
+        if (!authUser?.email) {
           setUser(null);
           setLoading(false);
           return;
@@ -38,26 +44,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: crmUser } = await supabase
           .from('users')
           .select('*')
-          .eq('email', session.user.email)
+          .eq('email', authUser.email)
           .single();
 
-        setUser(crmUser as User | null);
+        if (!cancelled) {
+          setUser(crmUser as User | null);
+        }
       } catch (err) {
         console.error('Auth error:', err);
-        setUser(null);
+        if (!cancelled) setUser(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadProfile();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      if (event === 'SIGNED_OUT' || !session) {
+      if (cancelled) return;
+
+      // Only clear user on explicit sign-out
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         return;
       }
 
+      // For INITIAL_SESSION, loadProfile already handles it — skip to avoid race
+      if (event === 'INITIAL_SESSION') return;
+
+      // For TOKEN_REFRESHED, SIGNED_IN, etc. — update user if we have a valid session
       if (session?.user?.email) {
         const { data: crmUser } = await supabase
           .from('users')
@@ -65,11 +80,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq('email', session.user.email)
           .single();
 
-        setUser(crmUser as User | null);
+        // Only update if we got a valid CRM user — don't clear on transient failures
+        if (!cancelled && crmUser) {
+          setUser(crmUser as User);
+        }
       }
+      // If session is null for non-SIGNED_OUT events, keep the current user
+      // (handles transient null sessions during token refresh without locks)
     });
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
