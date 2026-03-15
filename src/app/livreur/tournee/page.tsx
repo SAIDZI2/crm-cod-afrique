@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getAllTourneeCommandes, updateTourneeCommande, updateCommandeStatut, createRetour } from '@/lib/supabase/queries';
+import { handleDeliveryComplete } from '@/lib/supabase/actions';
 import { formatCurrency, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import { Phone, Package, CheckCircle, RotateCcw, MapPin, Loader2 } from 'lucide-react';
@@ -55,7 +56,7 @@ export default function LivreurTourneePage() {
         montant_collecte: Number(montantCollecte) || 0,
         heure_livraison: new Date().toISOString(),
       });
-      await updateCommandeStatut(commandeId, 'livre');
+      await handleDeliveryComplete(commandeId);
       setExpandedLivre(null);
       setMontantCollecte('');
       setFeedback({ type: 'success', message: 'Livraison confirmee avec succes.' });

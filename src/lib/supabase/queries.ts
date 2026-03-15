@@ -579,6 +579,23 @@ export async function createPaiement(paiement: Partial<import('../types').Paieme
   return data as import('../types').Paiement;
 }
 
+export async function updatePaiement(id: string, updates: Partial<import('../types').Paiement>) {
+  const { error } = await supabase
+    .from('paiements')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function getAllPaiements() {
+  const { data, error } = await supabase
+    .from('paiements')
+    .select('*, user:users!paiements_user_id_fkey(*)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as (import('../types').Paiement & { user: import('../types').User })[];
+}
+
 // ============================================
 // COMMANDES — UPDATE GENERIQUE
 // ============================================

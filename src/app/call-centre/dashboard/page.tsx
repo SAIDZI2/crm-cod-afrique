@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+
+
 import Link from 'next/link';
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

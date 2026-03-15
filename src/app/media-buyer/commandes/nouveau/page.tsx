@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getProduits, createCommande, createCommandeProduits } from '@/lib/supabase/queries';
+import { getProduits, createCommande, createCommandeProduits, checkBlacklist } from '@/lib/supabase/queries';
 import { formatCurrency, VILLES_RDC } from '@/lib/constants';
 import { toast } from 'sonner';
 
@@ -57,6 +57,13 @@ export default function NouvelleCommandePage() {
     }
     try {
       setSubmitting(true);
+      // Check blacklist before creating
+      const isBlacklisted = await checkBlacklist(form.telephone);
+      if (isBlacklisted) {
+        toast.error('Ce numero de telephone est dans la blacklist. Commande refusee.');
+        setSubmitting(false);
+        return;
+      }
       const commande = await createCommande({
         user_id: user!.id,
         destinataire_nom: form.destinataire_nom,

@@ -47,8 +47,8 @@ const methodeOptions = [
 
 export default function BalancePage() {
   const { user } = useAuth();
-  const { data: commissionsData, loading: l1 } = useSupabase(() => getCommissions(), []);
-  const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
+  const { data: commissionsData, loading: l1 } = useSupabase(() => (user ? getCommissions(user.id) : Promise.resolve([])), [user?.id]);
+  const { data: commandesData, loading: l2 } = useSupabase(() => (user ? getCommandes({ userId: user.id }) : Promise.resolve([])), [user?.id]);
   const { data: paiementsData, loading: l3, refetch: refetchPaiements } = useSupabase(
     () => (user ? getPaiements(user.id) : Promise.resolve([])),
     [user?.id]

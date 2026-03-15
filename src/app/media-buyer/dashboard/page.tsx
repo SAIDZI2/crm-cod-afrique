@@ -1,19 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/kpi-card';
 import { DonutChart } from '@/components/charts/donut-chart';
 import { LineChart } from '@/components/charts/line-chart';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getCommandesKpis, getCommandes, getCommissions, getDepenses } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 
 export default function MediaBuyerDashboard() {
-  const { data: kpis, loading: loadingKpis } = useSupabase(() => getCommandesKpis(), []);
-  const { data: commandes, loading: loadingCommandes } = useSupabase(() => getCommandes(), []);
-  const { data: commissions, loading: loadingCommissions } = useSupabase(() => getCommissions(), []);
-  const { data: depenses, loading: loadingDepenses } = useSupabase(() => getDepenses(), []);
+  const { user } = useAuth();
+  const { data: kpis, loading: loadingKpis } = useSupabase(() => (user ? getCommandesKpis(user.id) : Promise.resolve(undefined)), [user?.id]);
+  const { data: commandes, loading: loadingCommandes } = useSupabase(() => (user ? getCommandes({ userId: user.id }) : Promise.resolve([])), [user?.id]);
+  const { data: commissions, loading: loadingCommissions } = useSupabase(() => (user ? getCommissions(user.id) : Promise.resolve([])), [user?.id]);
+  const { data: depenses, loading: loadingDepenses } = useSupabase(() => (user ? getDepenses(user.id) : Promise.resolve([])), [user?.id]);
 
   if (loadingKpis || loadingCommandes || loadingCommissions || loadingDepenses) return <LoadingPage />;
 

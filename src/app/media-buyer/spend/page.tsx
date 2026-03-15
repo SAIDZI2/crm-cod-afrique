@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,8 +37,8 @@ import { toast } from 'sonner';
 
 export default function SpendPage() {
   const { user } = useAuth();
-  const { data: depensesData, loading: l1, refetch } = useSupabase(() => getDepenses(), []);
-  const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
+  const { data: depensesData, loading: l1, refetch } = useSupabase(() => (user ? getDepenses(user.id) : Promise.resolve([])), [user?.id]);
+  const { data: commandesData, loading: l2 } = useSupabase(() => (user ? getCommandes({ userId: user.id }) : Promise.resolve([])), [user?.id]);
   const { data: produitsData, loading: l3 } = useSupabase(() => getProduits(), []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newDepense, setNewDepense] = useState({

@@ -7,12 +7,13 @@ import { LoadingPage } from '@/hooks/use-supabase';
 
 const sidebarItems = [
   { label: 'Dashboard', href: '/admin', icon: 'dashboard' },
+  { label: 'Commandes', href: '/admin/commandes', icon: 'historique' },
+  { label: 'Preparation', href: '/admin/preparation', icon: 'offres' },
+  { label: 'Tournees', href: '/admin/tournees', icon: 'tournee' },
   { label: 'Utilisateurs', href: '/admin/utilisateurs', icon: 'equipe' },
   { label: 'Commissions', href: '/admin/commissions', icon: 'commissions' },
+  { label: 'Paiements', href: '/admin/paiements', icon: 'balance' },
   { label: 'Produits', href: '/admin/produits', icon: 'offres' },
-  { label: 'Tournees', href: '/admin/tournees', icon: 'tournee' },
-  { label: 'Preparation', href: '/admin/preparation', icon: 'historique' },
-  { label: 'Roles', href: '/admin/roles', icon: 'offres' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
