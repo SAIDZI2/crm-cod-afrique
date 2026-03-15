@@ -67,8 +67,8 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'Non autorise');
   END IF;
 
-  -- 1. Mettre a jour le statut
-  UPDATE commandes SET statut = 'livre', updated_at = now()
+  -- 1. Mettre a jour le statut (cast to enum type)
+  UPDATE commandes SET statut = 'livre'::statut_commande, updated_at = now()
   WHERE id = p_commande_id;
 
   -- 2. Calculer et creer la commission du media buyer
@@ -136,7 +136,8 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'Statut non autorise pour livreur');
   END IF;
 
-  UPDATE commandes SET statut = p_statut, updated_at = now()
+  -- Cast text to statut_commande enum
+  UPDATE commandes SET statut = p_statut::statut_commande, updated_at = now()
   WHERE id = p_commande_id;
 
   RETURN json_build_object('success', true, 'commande_id', p_commande_id, 'statut', p_statut);
