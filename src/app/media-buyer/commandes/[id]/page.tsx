@@ -190,19 +190,19 @@ export default function CommandeDetailPage() {
               <p className="font-medium">{formatDate(commande.created_at)}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">User ID</span>
-              <p className="font-medium">{commande.user_id}</p>
+              <span className="text-muted-foreground">Creee par</span>
+              <p className="font-medium">{(commande as unknown as { user?: { nom: string } }).user?.nom ?? commande.user_id}</p>
             </div>
             {commande.agent_id && (
               <div>
-                <span className="text-muted-foreground">Agent ID</span>
-                <p className="font-medium">{commande.agent_id}</p>
+                <span className="text-muted-foreground">Agent</span>
+                <p className="font-medium">{(commande as unknown as { agent?: { nom: string } }).agent?.nom ?? commande.agent_id}</p>
               </div>
             )}
             {commande.livreur_id && (
               <div>
-                <span className="text-muted-foreground">Livreur ID</span>
-                <p className="font-medium">{commande.livreur_id}</p>
+                <span className="text-muted-foreground">Livreur</span>
+                <p className="font-medium">{(commande as unknown as { livreur?: { nom: string } }).livreur?.nom ?? commande.livreur_id}</p>
               </div>
             )}
           </div>

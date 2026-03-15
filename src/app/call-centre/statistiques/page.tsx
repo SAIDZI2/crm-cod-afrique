@@ -12,9 +12,11 @@ import {
 import { BarChart } from '@/components/charts/bar-chart';
 import { LineChart } from '@/components/charts/line-chart';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getCommandes, getAppels, getUsersByRole } from '@/lib/supabase/queries';
 
 export default function StatistiquesPage() {
+  const { user } = useAuth();
   const { data: commandesData, loading: l1 } = useSupabase(() => getCommandes(), []);
   const { data: appelsData, loading: l2 } = useSupabase(() => getAppels(), []);
   const { data: usersData, loading: l3 } = useSupabase(() => getUsersByRole('call_center'), []);
@@ -50,7 +52,12 @@ export default function StatistiquesPage() {
     const bestHourEntry = Object.entries(hourCounts).sort(([, a], [, b]) => b - a)[0];
     const meilleureHeure = bestHourEntry ? `${bestHourEntry[0]}h00` : '-';
 
-    const upsells = Math.floor(confirmes * 0.2);
+    const upsells = agentCommandes.reduce((acc, c) => {
+      const cpCount = (c as unknown as { commande_produits?: { type?: string }[] }).commande_produits?.filter(
+        (cp) => cp.type === 'upsell'
+      ).length ?? 0;
+      return acc + cpCount;
+    }, 0);
 
     return {
       id: agent.id,
@@ -68,7 +75,7 @@ export default function StatistiquesPage() {
     };
   });
 
-  const personalStats = agentStats[0];
+  const personalStats = agentStats.find((a) => a.id === user?.id) ?? agentStats[0];
 
   // Chart data: confirmes vs echoues vs reportes par jour
   const barChartData = (() => {

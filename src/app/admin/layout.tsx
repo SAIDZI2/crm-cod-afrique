@@ -9,6 +9,9 @@ const sidebarItems = [
   { label: 'Dashboard', href: '/admin', icon: 'dashboard' },
   { label: 'Utilisateurs', href: '/admin/utilisateurs', icon: 'equipe' },
   { label: 'Commissions', href: '/admin/commissions', icon: 'commissions' },
+  { label: 'Produits', href: '/admin/produits', icon: 'offres' },
+  { label: 'Tournees', href: '/admin/tournees', icon: 'tournee' },
+  { label: 'Preparation', href: '/admin/preparation', icon: 'historique' },
   { label: 'Roles', href: '/admin/roles', icon: 'offres' },
 ];
 

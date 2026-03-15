@@ -12,16 +12,27 @@ import {
 } from '@/components/ui/table';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getSubAffiliates, getCommandes } from '@/lib/supabase/queries';
+import { getSubAffiliates, getCommandes, updateUser } from '@/lib/supabase/queries';
 import { formatDate } from '@/lib/constants';
+import { toast } from 'sonner';
 
 export default function EquipePage() {
   const { user } = useAuth();
-  const { data: membersData, loading: l1 } = useSupabase(
+  const { data: membersData, loading: l1, refetch } = useSupabase(
     () => (user ? getSubAffiliates(user.id) : Promise.resolve([])),
     [user?.id]
   );
   const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
+
+  const handleToggleActif = async (memberId: string, currentActif: boolean) => {
+    try {
+      await updateUser(memberId, { actif: !currentActif } as Record<string, unknown>);
+      toast.success(!currentActif ? 'Membre active.' : 'Membre desactive.');
+      refetch();
+    } catch (err) {
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    }
+  };
 
   if (l1 || l2) return <LoadingPage />;
   const members = membersData ?? [];
@@ -72,17 +83,22 @@ export default function EquipePage() {
                     {memberStats[member.id] || 0}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        member.actif ? 'bg-green-500' : 'bg-gray-300'
-                      }`}
+                    <button
+                      onClick={() => handleToggleActif(member.id, member.actif)}
+                      className="cursor-pointer"
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          member.actif ? 'translate-x-6' : 'translate-x-1'
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          member.actif ? 'bg-green-500' : 'bg-gray-300'
                         }`}
-                      />
-                    </span>
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            member.actif ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </span>
+                    </button>
                   </TableCell>
                 </TableRow>
               ))}

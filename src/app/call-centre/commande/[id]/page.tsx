@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import {
   getCommandeById,
+  getCommandesByTelephone,
   updateCommandeStatut,
   createAppel,
   createRappel,
@@ -54,14 +55,35 @@ export default function CommandeDetailPage() {
   const [scriptOpen, setScriptOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Call timer
+  const [callActive, setCallActive] = useState(false);
+  const [callSeconds, setCallSeconds] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (callActive) {
+      timerRef.current = setInterval(() => setCallSeconds((s) => s + 1), 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [callActive]);
+
+  const formatTimer = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+  const getCallDuration = () => callSeconds;
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const { data: commande, loading: l1, refetch } = useSupabase(
     () => getCommandeById(commandeId),
     [commandeId]
   );
+  const { data: clientHistory, loading: l2 } = useSupabase(
+    () => commande?.telephone ? getCommandesByTelephone(commande.telephone) : Promise.resolve([]),
+    [commande?.telephone]
+  );
 
-  if (l1) return <LoadingPage />;
+  if (l1 || l2) return <LoadingPage />;
 
   if (!commande) {
     return (
@@ -80,12 +102,28 @@ export default function CommandeDetailPage() {
   const appels = commande.appels ?? [];
   const firstProduct = commande.commande_produits?.[0]?.produit;
 
+  // Status-based action restrictions
+  const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    nouveau: ['confirme', 'echoue', 'reporte'],
+    reporte: ['confirme', 'echoue', 'reporte'],
+  };
+  const allowedActions = ALLOWED_TRANSITIONS[commande.statut] ?? [];
+  const canConfirm = allowedActions.includes('confirme');
+  const canEchoue = allowedActions.includes('echoue');
+  const canReporter = allowedActions.includes('reporte');
+
+  // Client history
+  const otherOrders = (clientHistory ?? []).filter((c) => c.id !== commande.id);
+  const totalHistoryAmount = otherOrders.reduce((sum, c) => sum + c.montant_total, 0);
+
   async function handleAction(action: string, handler: () => Promise<void>) {
     setActionLoading(action);
     setFeedback(null);
     try {
       await handler();
       setFeedback({ type: 'success', message: `Action "${action}" effectuee avec succes.` });
+      setCallActive(false);
+      setCallSeconds(0);
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -101,7 +139,7 @@ export default function CommandeDetailPage() {
         commande_id: commande!.id,
         agent_id: user!.id,
         resultat: 'confirme',
-        duree_secondes: 0,
+        duree_secondes: getCallDuration(),
         note: note.trim() || undefined,
       });
     });
@@ -114,7 +152,7 @@ export default function CommandeDetailPage() {
         commande_id: commande!.id,
         agent_id: user!.id,
         resultat: 'echoue',
-        duree_secondes: 0,
+        duree_secondes: getCallDuration(),
         note: note.trim() || undefined,
       });
     });
@@ -154,7 +192,7 @@ export default function CommandeDetailPage() {
         commande_id: commande!.id,
         agent_id: user!.id,
         resultat: 'pas_de_reponse',
-        duree_secondes: 0,
+        duree_secondes: getCallDuration(),
         note: note.trim(),
       });
       setNote('');
@@ -249,9 +287,30 @@ export default function CommandeDetailPage() {
 
             <div>
               <p className="text-xs text-muted-foreground mb-2">Historique client</p>
-              <div className="bg-gray-50 rounded-lg p-3 text-sm text-muted-foreground">
-                Premiere commande de ce client (pas d&apos;historique disponible).
-              </div>
+              {otherOrders.length === 0 ? (
+                <div className="bg-gray-50 rounded-lg p-3 text-sm text-muted-foreground">
+                  Premiere commande de ce client.
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">{otherOrders.length} commande{otherOrders.length > 1 ? 's' : ''} precedente{otherOrders.length > 1 ? 's' : ''}</span>
+                    <span className="font-medium">{formatCurrency(totalHistoryAmount)}</span>
+                  </div>
+                  {otherOrders.slice(0, 3).map((o) => (
+                    <div key={o.id} className="flex justify-between text-xs text-muted-foreground">
+                      <span>{formatDate(o.created_at)}</span>
+                      <div className="flex gap-2">
+                        <StatusBadge statut={o.statut} />
+                        <span>{formatCurrency(o.montant_total)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {otherOrders.length > 3 && (
+                    <p className="text-xs text-muted-foreground">+ {otherOrders.length - 3} autres commandes</p>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -314,17 +373,47 @@ export default function CommandeDetailPage() {
         </Card>
       </div>
 
+      {/* Call Timer */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Phone className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Chronometre d&apos;appel</p>
+                <p className={`text-2xl font-mono font-bold ${callActive ? 'text-green-600' : 'text-gray-400'}`}>
+                  {formatTimer(callSeconds)}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant={callActive ? 'destructive' : 'default'}
+              onClick={() => setCallActive(!callActive)}
+              className="gap-2"
+            >
+              <Phone className="w-4 h-4" />
+              {callActive ? 'Arreter' : 'Demarrer l\'appel'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Action Zone */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Actions</CardTitle>
         </CardHeader>
         <CardContent>
+          {!canConfirm && !canEchoue && !canReporter && (
+            <div className="bg-gray-50 rounded-lg p-3 text-sm text-muted-foreground mb-3">
+              Cette commande est au statut &quot;{commande.statut}&quot; — aucune action disponible.
+            </div>
+          )}
           <div className="flex flex-wrap gap-3">
             <Button
               className="bg-green-600 hover:bg-green-700 gap-2"
               onClick={handleConfirmer}
-              disabled={!!actionLoading}
+              disabled={!!actionLoading || !canConfirm}
             >
               {isLoading('Confirmer') ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Confirmer
@@ -334,7 +423,7 @@ export default function CommandeDetailPage() {
               variant="destructive"
               className="gap-2"
               onClick={handleEchoue}
-              disabled={!!actionLoading}
+              disabled={!!actionLoading || !canEchoue}
             >
               {isLoading('Echoue') ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
               Echoue
@@ -343,7 +432,7 @@ export default function CommandeDetailPage() {
             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
               <DialogTrigger
                 render={
-                  <Button className="bg-orange-500 hover:bg-orange-600 gap-2" disabled={!!actionLoading}>
+                  <Button className="bg-orange-500 hover:bg-orange-600 gap-2" disabled={!!actionLoading || !canReporter}>
                     <Clock className="w-4 h-4" />
                     Reporter
                   </Button>

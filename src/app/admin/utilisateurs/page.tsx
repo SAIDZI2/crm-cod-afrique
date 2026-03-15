@@ -9,9 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
-import { getUsers, createUser } from '@/lib/supabase/queries';
-import { Loader2, UserPlus } from 'lucide-react';
+import { getUsers, createUser, updateUser } from '@/lib/supabase/queries';
+import { toast } from 'sonner';
+import { Loader2, UserPlus, Pencil } from 'lucide-react';
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -34,6 +37,8 @@ const roleOptions = [
 export default function AdminUsersPage() {
   const { data: usersData, loading, refetch } = useSupabase(() => getUsers(), []);
   const [showDialog, setShowDialog] = useState(false);
+  const [editDialog, setEditDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState<{ id: string; nom: string; role: string; commission_pct: number } | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -48,6 +53,41 @@ export default function AdminUsersPage() {
     setEmail('');
     setRole('');
     setCommissionPct('0');
+  };
+
+  const openEditDialog = (u: { id: string; nom: string; role: string; commission_pct: number }) => {
+    setEditingUser(u);
+    setEditDialog(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!editingUser) return;
+    setFormLoading(true);
+    try {
+      await updateUser(editingUser.id, {
+        nom: editingUser.nom,
+        role: editingUser.role,
+        commission_pct: editingUser.commission_pct,
+      } as Record<string, unknown>);
+      toast.success('Utilisateur modifie.');
+      setEditDialog(false);
+      setEditingUser(null);
+      refetch();
+    } catch (err) {
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Inconnue'));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleToggleActif = async (userId: string, currentActif: boolean) => {
+    try {
+      await updateUser(userId, { actif: !currentActif } as Record<string, unknown>);
+      toast.success(!currentActif ? 'Utilisateur active.' : 'Utilisateur desactive.');
+      refetch();
+    } catch (err) {
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Inconnue'));
+    }
   };
 
   const handleCreateUser = async () => {
@@ -75,6 +115,7 @@ export default function AdminUsersPage() {
   if (loading) return <LoadingPage />;
   const users = usersData ?? [];
   const actifs = users.filter((u) => u.actif).length;
+  const { page, setPage, totalPages, paginatedItems } = usePagination(users, 15);
 
   return (
     <div className="space-y-6">
@@ -178,10 +219,11 @@ export default function AdminUsersPage() {
                 <TableHead>Role</TableHead>
                 <TableHead>Commission</TableHead>
                 <TableHead>Actif</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {paginatedItems.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.nom}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
@@ -192,16 +234,92 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>{user.commission_pct}%</TableCell>
                   <TableCell>
-                    <Badge variant={user.actif ? 'default' : 'destructive'}>
-                      {user.actif ? 'Actif' : 'Inactif'}
-                    </Badge>
+                    <button
+                      onClick={() => handleToggleActif(user.id, user.actif)}
+                      className="cursor-pointer"
+                    >
+                      <Badge variant={user.actif ? 'default' : 'destructive'}>
+                        {user.actif ? 'Actif' : 'Inactif'}
+                      </Badge>
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog({
+                        id: user.id,
+                        nom: user.nom,
+                        role: user.role,
+                        commission_pct: user.commission_pct,
+                      })}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" />
+                      Modifier
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={users.length} />
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier l&apos;utilisateur</DialogTitle>
+          </DialogHeader>
+          {editingUser && (
+            <div className="space-y-4 mt-2">
+              <div>
+                <Label className="text-sm font-medium">Nom</Label>
+                <Input
+                  value={editingUser.nom}
+                  onChange={(e) => setEditingUser({ ...editingUser, nom: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Role</Label>
+                <Select
+                  value={editingUser.role}
+                  onValueChange={(val) => val && setEditingUser({ ...editingUser, role: val })}
+                >
+                  <SelectTrigger className="mt-1 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleOptions.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Commission (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={editingUser.commission_pct}
+                  onChange={(e) => setEditingUser({ ...editingUser, commission_pct: Number(e.target.value) || 0 })}
+                  className="mt-1"
+                />
+              </div>
+              <Button className="w-full" onClick={handleEditUser} disabled={formLoading}>
+                {formLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Pencil className="w-4 h-4 mr-2" />}
+                Enregistrer
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import {
   LayoutDashboard, Package, ShoppingCart, DollarSign, Wallet,
   Ban, Users, Percent, Phone, ListTodo, Clock, BarChart3,
-  Truck, MapPin, Banknote, RotateCcw, History, LogOut
+  Truck, MapPin, Banknote, RotateCcw, History, LogOut, UserCircle
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -70,10 +70,22 @@ export function Sidebar({ title, titleColor, items }: SidebarProps) {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-gray-800 space-y-2">
+        <Link
+          href="/profile"
+          className={cn(
+            'flex items-center gap-2 text-sm w-full px-1 py-1 rounded transition-colors',
+            pathname === '/profile'
+              ? 'text-white font-medium'
+              : 'text-gray-400 hover:text-white'
+          )}
+        >
+          <UserCircle className="w-4 h-4" />
+          Mon Profil
+        </Link>
         <button
           onClick={() => signOut()}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white w-full"
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white w-full px-1 py-1"
         >
           <LogOut className="w-4 h-4" />
           Deconnexion

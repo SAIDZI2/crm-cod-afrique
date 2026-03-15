@@ -8,8 +8,9 @@ import {
 } from '@/components/ui/table';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getRetours } from '@/lib/supabase/queries';
+import { getRetours, updateRetour } from '@/lib/supabase/queries';
 import { formatDate, MOTIFS_RETOUR } from '@/lib/constants';
+import { toast } from 'sonner';
 import { RotateCcw, CheckCircle, XCircle } from 'lucide-react';
 
 const MOTIF_COLORS: Record<string, { bg: string; text: string }> = {
@@ -25,10 +26,20 @@ const MOTIF_COLORS: Record<string, { bg: string; text: string }> = {
 
 export default function LivreurRetoursPage() {
   const { user } = useAuth();
-  const { data: retoursData, loading } = useSupabase(
+  const { data: retoursData, loading, refetch } = useSupabase(
     () => (user ? getRetours(user.id) : Promise.resolve([])),
     [user?.id]
   );
+
+  const handleToggleRecuDepot = async (retourId: string, currentValue: boolean) => {
+    try {
+      await updateRetour(retourId, { recu_au_depot: !currentValue } as Record<string, unknown>);
+      toast.success(!currentValue ? 'Marque comme recu au depot.' : 'Marque comme non recu.');
+      refetch();
+    } catch (err) {
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    }
+  };
 
   if (loading) return <LoadingPage />;
   const retours = retoursData ?? [];
@@ -127,11 +138,17 @@ export default function LivreurRetoursPage() {
                           {formatDate(retour.date_retour)}
                         </TableCell>
                         <TableCell className="text-center">
-                          {retour.recu_au_depot ? (
-                            <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
-                          ) : (
-                            <XCircle className="w-5 h-5 text-gray-400 mx-auto" />
-                          )}
+                          <button
+                            onClick={() => handleToggleRecuDepot(retour.id, retour.recu_au_depot)}
+                            className="cursor-pointer hover:scale-110 transition-transform"
+                            title={retour.recu_au_depot ? 'Marquer comme non recu' : 'Marquer comme recu au depot'}
+                          >
+                            {retour.recu_au_depot ? (
+                              <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
+                            ) : (
+                              <XCircle className="w-5 h-5 text-gray-400 mx-auto" />
+                            )}
+                          </button>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-32 truncate">
                           {retour.note ?? '-'}

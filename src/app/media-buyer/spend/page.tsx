@@ -33,6 +33,7 @@ import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getDepenses, getCommandes, getProduits, createDepense } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate } from '@/lib/constants';
+import { toast } from 'sonner';
 
 export default function SpendPage() {
   const { user } = useAuth();
@@ -60,7 +61,7 @@ export default function SpendPage() {
 
   async function handleAddDepense() {
     if (!newDepense.montant || !newDepense.date_depense) {
-      alert('Veuillez remplir le montant et la date.');
+      toast.error('Veuillez remplir le montant et la date.');
       return;
     }
     try {
@@ -71,12 +72,12 @@ export default function SpendPage() {
         date_depense: newDepense.date_depense,
         note: newDepense.note || undefined,
       });
-      alert(`Depense ajoutee!`);
+      toast.success('Depense ajoutee!');
       setNewDepense({ produit_id: '', montant: '', note: '', date_depense: '' });
       setDialogOpen(false);
       refetch();
     } catch (err) {
-      alert('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
     }
   }
 

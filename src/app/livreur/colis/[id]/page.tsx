@@ -15,6 +15,7 @@ import {
   getAllTourneeCommandes, updateTourneeCommande, updateCommandeStatut,
   createRetour, createAppel
 } from '@/lib/supabase/queries';
+import { handleDeliveryComplete } from '@/lib/supabase/actions';
 import { formatCurrency, formatDateTime, MOTIFS_RETOUR } from '@/lib/constants';
 import type { StatutLivraison, MotifRetour } from '@/lib/types';
 import {
@@ -87,7 +88,7 @@ export default function LivreurColisDetailPage() {
         montant_collecte: Number(montantCollecte) || 0,
         heure_livraison: new Date().toISOString(),
       });
-      await updateCommandeStatut(commande!.id, 'livre');
+      await handleDeliveryComplete(commande!.id);
       resetForm();
       setFeedback({ type: 'success', message: 'Livraison confirmee avec succes.' });
       refetch();

@@ -18,6 +18,7 @@ import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getProduits, createCommande, createCommandeProduits } from '@/lib/supabase/queries';
 import { formatCurrency, VILLES_RDC } from '@/lib/constants';
+import { toast } from 'sonner';
 
 export default function NouvelleCommandePage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function NouvelleCommandePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.destinataire_nom || !form.telephone || !form.ville || !form.produit_id) {
-      alert('Veuillez remplir tous les champs obligatoires.');
+      toast.error('Veuillez remplir tous les champs obligatoires.');
       return;
     }
     try {
@@ -75,12 +76,10 @@ export default function NouvelleCommandePage() {
           prix_unitaire: selectedProduit!.prix,
         },
       ]);
-      alert(
-        `Commande creee avec succes!\n\nDestinataire: ${form.destinataire_nom}\nVille: ${form.ville}\nProduit: ${selectedProduit?.nom}\nTotal: ${formatCurrency(total)}`
-      );
+      toast.success(`Commande creee! ${form.destinataire_nom} — ${selectedProduit?.nom} — ${formatCurrency(total)}`);
       router.push('/media-buyer/commandes');
     } catch (err) {
-      alert('Erreur lors de la creation de la commande: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+      toast.error('Erreur lors de la creation: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
     } finally {
       setSubmitting(false);
     }

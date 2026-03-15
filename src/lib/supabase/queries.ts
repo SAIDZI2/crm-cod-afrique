@@ -72,6 +72,32 @@ export async function getProduitById(id: string) {
   return data as Produit;
 }
 
+export async function createProduit(produit: Partial<Produit>) {
+  const { data, error } = await supabase
+    .from('produits')
+    .insert(produit)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Produit;
+}
+
+export async function updateProduit(id: string, updates: Partial<Produit>) {
+  const { error } = await supabase
+    .from('produits')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteProduit(id: string) {
+  const { error } = await supabase
+    .from('produits')
+    .update({ actif: false } as Record<string, unknown>)
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // ============================================
 // COMMANDES
 // ============================================
@@ -99,11 +125,21 @@ export async function getCommandes(filters?: {
 export async function getCommandeById(id: string) {
   const { data, error } = await supabase
     .from('commandes')
-    .select('*, user:users!commandes_user_id_fkey(*), commande_produits(*, produit:produits(*)), appels(*)')
+    .select('*, user:users!commandes_user_id_fkey(*), agent:users!commandes_agent_id_fkey(*), livreur:users!commandes_livreur_id_fkey(*), commande_produits(*, produit:produits(*)), appels(*)')
     .eq('id', id)
     .single();
   if (error) throw error;
-  return data as Commande & { commande_produits: (CommandeProduit & { produit: Produit })[]; appels: Appel[] };
+  return data as Commande & { user?: User; agent?: User; livreur?: User; commande_produits: (CommandeProduit & { produit: Produit })[]; appels: Appel[] };
+}
+
+export async function getCommandesByTelephone(telephone: string) {
+  const { data, error } = await supabase
+    .from('commandes')
+    .select('*')
+    .eq('telephone', telephone)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as Commande[];
 }
 
 export async function getCommandesByStatut(statut: StatutCommande) {
@@ -257,6 +293,16 @@ export async function getCommissions(userId?: string) {
   return data as (Commission & { commande: Commande; user: User })[];
 }
 
+export async function createCommission(commission: Partial<Commission>) {
+  const { data, error } = await supabase
+    .from('commissions')
+    .insert(commission)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Commission;
+}
+
 // ============================================
 // APPELS
 // ============================================
@@ -391,6 +437,14 @@ export async function getRetours(livreurId?: string) {
   return data as (Retour & { commande: Commande })[];
 }
 
+export async function updateRetour(id: string, updates: Partial<Retour>) {
+  const { error } = await supabase
+    .from('retours')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function createRetour(retour: Partial<Retour>) {
   const { data, error } = await supabase
     .from('retours')
@@ -444,6 +498,14 @@ export async function updateCommissionStatut(id: string, statut: StatutCommissio
 // ============================================
 // USERS — MUTATION ADMIN
 // ============================================
+export async function updateUser(id: string, updates: Partial<User>) {
+  const { error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function createUser(userData: { nom: string; email: string; role: string; commission_pct?: number }) {
   const { data, error } = await supabase
     .from('users')
@@ -464,12 +526,57 @@ export async function createUser(userData: { nom: string; email: string; role: s
 // ============================================
 // TOURNEES — MUTATIONS
 // ============================================
+export async function createTournee(tournee: { livreur_id: string; date: string; statut?: string }) {
+  const { data, error } = await supabase
+    .from('tournees')
+    .insert({ ...tournee, statut: tournee.statut ?? 'en_preparation' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Tournee;
+}
+
+export async function createTourneeCommande(tc: { tournee_id: string; commande_id: string; ordre: number }) {
+  const { data, error } = await supabase
+    .from('tournee_commandes')
+    .insert(tc)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TourneeCommande;
+}
+
 export async function closeTournee(tourneeId: string) {
   const { error } = await supabase
     .from('tournees')
     .update({ statut: 'cloturee', date_cloture: new Date().toISOString() })
     .eq('id', tourneeId);
   if (error) throw error;
+}
+
+// ============================================
+// PAIEMENTS (RETRAITS)
+// ============================================
+export async function getPaiements(userId?: string) {
+  let query = supabase
+    .from('paiements')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (userId) query = query.eq('user_id', userId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data as import('../types').Paiement[];
+}
+
+export async function createPaiement(paiement: Partial<import('../types').Paiement>) {
+  const { data, error } = await supabase
+    .from('paiements')
+    .insert(paiement)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as import('../types').Paiement;
 }
 
 // ============================================

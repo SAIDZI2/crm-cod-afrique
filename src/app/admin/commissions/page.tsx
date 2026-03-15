@@ -5,10 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { getCommissions, updateCommissionStatut } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
-import { Loader2 } from 'lucide-react';
+import { exportCsv } from '@/lib/export-csv';
+import { toast } from 'sonner';
+import { Loader2, Download } from 'lucide-react';
 
 const statutColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   en_attente: 'secondary',
@@ -41,10 +45,24 @@ export default function AdminCommissionsPage() {
     setFeedback(null);
     try {
       await updateCommissionStatut(id, 'payee');
-      setFeedback({ type: 'success', message: 'Commission marquee comme payee.' });
+      toast.success('Commission marquee comme payee.');
       refetch();
     } catch (err) {
-      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+      toast.error(`Erreur: ${err instanceof Error ? err.message : 'Inconnue'}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    setActionLoading(`reject-${id}`);
+    setFeedback(null);
+    try {
+      await updateCommissionStatut(id, 'rejetee');
+      toast.success('Commission rejetee.');
+      refetch();
+    } catch (err) {
+      toast.error(`Erreur: ${err instanceof Error ? err.message : 'Inconnue'}`);
     } finally {
       setActionLoading(null);
     }
@@ -52,12 +70,35 @@ export default function AdminCommissionsPage() {
 
   if (loading) return <LoadingPage />;
   const commissions = commissionsData ?? [];
+  const { page, setPage, totalPages, paginatedItems } = usePagination(commissions, 15);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Commissions</h1>
-        <p className="text-sm text-muted-foreground">Validation et paiement</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Commissions</h1>
+          <p className="text-sm text-muted-foreground">Validation et paiement</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            exportCsv(
+              commissions as unknown as Record<string, unknown>[],
+              [
+                { key: 'id', header: 'ID' },
+                { key: 'commande_id', header: 'Commande' },
+                { key: '', header: 'Media Buyer', format: (r) => (r as unknown as { user?: { nom: string } }).user?.nom ?? '' },
+                { key: 'montant', header: 'Montant', format: (r) => String(r.montant) },
+                { key: 'statut', header: 'Statut' },
+              ],
+              'commissions.csv'
+            )
+          }
+        >
+          <Download className="w-4 h-4 mr-1" />
+          CSV
+        </Button>
       </div>
 
       {feedback && (
@@ -89,7 +130,7 @@ export default function AdminCommissionsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                commissions.map((row) => (
+                paginatedItems.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell>
                       <div className="font-medium">{row.commande?.id ?? row.commande_id ?? '-'}</div>
@@ -107,15 +148,26 @@ export default function AdminCommissionsPage() {
                     </TableCell>
                     <TableCell className="space-x-2">
                       {row.statut === 'en_attente' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleApprove(row.id)}
-                          disabled={actionLoading === `approve-${row.id}`}
-                        >
-                          {actionLoading === `approve-${row.id}` ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                          Valider
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleApprove(row.id)}
+                            disabled={actionLoading === `approve-${row.id}`}
+                          >
+                            {actionLoading === `approve-${row.id}` ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                            Valider
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleReject(row.id)}
+                            disabled={actionLoading === `reject-${row.id}`}
+                          >
+                            {actionLoading === `reject-${row.id}` ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                            Rejeter
+                          </Button>
+                        </>
                       )}
                       {row.statut === 'approuvee' && (
                         <Button
@@ -137,6 +189,7 @@ export default function AdminCommissionsPage() {
               )}
             </TableBody>
           </Table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={commissions.length} />
         </CardContent>
       </Card>
     </div>

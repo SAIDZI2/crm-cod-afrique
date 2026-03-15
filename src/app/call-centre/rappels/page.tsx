@@ -13,9 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
-import { getRappels } from '@/lib/supabase/queries';
+import { getRappels, updateRappelStatut } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
-import { Phone, FileText, AlertTriangle, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { Phone, FileText, AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react';
 import type { StatutRappel } from '@/lib/types';
 
 const statutRappelConfig: Record<StatutRappel, { label: string; color: string }> = {
@@ -25,8 +26,22 @@ const statutRappelConfig: Record<StatutRappel, { label: string; color: string }>
 };
 
 export default function RappelsPage() {
-  const { data: rappelsData, loading } = useSupabase(() => getRappels(), []);
+  const { data: rappelsData, loading, refetch } = useSupabase(() => getRappels(), []);
   const [statusFilter, setStatusFilter] = useState<string>('tous');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const handleUpdateStatut = async (id: string, statut: 'effectue' | 'manque') => {
+    setUpdatingId(id);
+    try {
+      await updateRappelStatut(id, statut);
+      toast.success(`Rappel marque comme ${statut === 'effectue' ? 'effectue' : 'manque'}.`);
+      refetch();
+    } catch (err) {
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   if (loading) return <LoadingPage />;
   const allRappels = rappelsData ?? [];
@@ -202,6 +217,30 @@ export default function RappelsPage() {
                           </Badge>
 
                           <div className="flex gap-1">
+                            {rappel.statut === 'en_attente' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-green-700 border-green-300 hover:bg-green-50"
+                                  onClick={() => handleUpdateStatut(rappel.id, 'effectue')}
+                                  disabled={updatingId === rappel.id}
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  Effectue
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-red-700 border-red-300 hover:bg-red-50"
+                                  onClick={() => handleUpdateStatut(rappel.id, 'manque')}
+                                  disabled={updatingId === rappel.id}
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                  Manque
+                                </Button>
+                              </>
+                            )}
                             {commande && (
                               <Link href={`/call-centre/commande/${commande.id}`}>
                                 <Button variant="outline" size="sm" className="gap-1">

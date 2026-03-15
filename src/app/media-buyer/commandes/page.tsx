@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
+import { useDebounce } from '@/hooks/use-debounce';
 import {
   Select,
   SelectContent,
@@ -24,7 +27,9 @@ import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getCommandes } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, STATUT_CONFIG } from '@/lib/constants';
+import { exportCsv } from '@/lib/export-csv';
 import type { StatutCommande } from '@/lib/types';
+import { Download } from 'lucide-react';
 
 export default function CommandesPage() {
   const { user } = useAuth();
@@ -33,6 +38,7 @@ export default function CommandesPage() {
     [user?.id]
   );
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statutFilter, setStatutFilter] = useState('tous');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
@@ -42,24 +48,52 @@ export default function CommandesPage() {
   const commandesList = commandes ?? [];
 
   const filtered = commandesList.filter((c) => {
-    const matchSearch =
-      c.id.toLowerCase().includes(search.toLowerCase()) ||
-      c.destinataire_nom.toLowerCase().includes(search.toLowerCase()) ||
-      c.telephone.includes(search) ||
-      c.ville.toLowerCase().includes(search.toLowerCase());
+    const s = debouncedSearch.toLowerCase();
+    const matchSearch = !s ||
+      c.id.toLowerCase().includes(s) ||
+      c.destinataire_nom.toLowerCase().includes(s) ||
+      c.telephone.includes(s) ||
+      c.ville.toLowerCase().includes(s);
     const matchStatut = statutFilter === 'tous' || c.statut === statutFilter;
     const matchDateDebut = !dateDebut || c.created_at >= dateDebut;
     const matchDateFin = !dateFin || c.created_at <= dateFin + 'T23:59:59Z';
     return matchSearch && matchStatut && matchDateDebut && matchDateFin;
   });
 
+  const { page, setPage, totalPages, paginatedItems } = usePagination(filtered, 15);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Commandes</h1>
-        <Link href="/media-buyer/commandes/nouveau">
-          <Button>+ Nouvelle Commande</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              exportCsv(
+                filtered as unknown as Record<string, unknown>[],
+                [
+                  { key: 'id', header: 'ID' },
+                  { key: 'statut', header: 'Statut' },
+                  { key: 'created_at', header: 'Date', format: (r) => formatDate(r.created_at as string) },
+                  { key: 'destinataire_nom', header: 'Destinataire' },
+                  { key: 'telephone', header: 'Telephone' },
+                  { key: 'ville', header: 'Ville' },
+                  { key: 'montant_total', header: 'Montant', format: (r) => String(r.montant_total) },
+                  { key: 'source', header: 'Source' },
+                ],
+                'commandes.csv'
+              )
+            }
+          >
+            <Download className="w-4 h-4 mr-1" />
+            CSV
+          </Button>
+          <Link href="/media-buyer/commandes/nouveau">
+            <Button>+ Nouvelle Commande</Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -113,7 +147,7 @@ export default function CommandesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((commande) => (
+            {paginatedItems.map((commande) => (
               <TableRow key={commande.id}>
                 <TableCell className="font-mono text-xs">{commande.id}</TableCell>
                 <TableCell>
@@ -145,9 +179,7 @@ export default function CommandesPage() {
         </div>
       )}
 
-      <p className="text-sm text-muted-foreground">
-        {filtered.length} commande{filtered.length > 1 ? 's' : ''} affichee{filtered.length > 1 ? 's' : ''}
-      </p>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} />
     </div>
   );
 }

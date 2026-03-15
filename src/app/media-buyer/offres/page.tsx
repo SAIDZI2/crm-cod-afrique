@@ -72,10 +72,16 @@ export default function OffresPage() {
           const stockBadge = stockBadgeConfig[produit.statut_stock];
           return (
             <Card key={produit.id} className="overflow-hidden">
-              {/* Image placeholder */}
-              <div className="h-40 bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-400 text-sm">Image produit</span>
-              </div>
+              {/* Product Image */}
+              {produit.image_url ? (
+                <div className="h-40 overflow-hidden">
+                  <img src={produit.image_url} alt={produit.nom} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="h-40 bg-gray-100 flex items-center justify-center">
+                  <span className="text-gray-400 text-sm">Pas d&apos;image</span>
+                </div>
+              )}
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold text-sm leading-tight">{produit.nom}</h3>

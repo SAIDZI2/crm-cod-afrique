@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import {
   Table,
   TableBody,
@@ -16,7 +18,9 @@ import {
 import { formatDateTime } from '@/lib/constants';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getBlacklist, addToBlacklist } from '@/lib/supabase/queries';
+import { getBlacklist, addToBlacklist, removeFromBlacklist } from '@/lib/supabase/queries';
+import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 export default function BlacklistPage() {
   const { user } = useAuth();
@@ -34,9 +38,11 @@ export default function BlacklistPage() {
       (b.motif && b.motif.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const { page, setPage, totalPages, paginatedItems } = usePagination(filtered, 15);
+
   async function handleAdd() {
     if (!newTelephone.trim()) {
-      alert('Veuillez entrer un numero de telephone.');
+      toast.error('Veuillez entrer un numero de telephone.');
       return;
     }
     try {
@@ -45,11 +51,22 @@ export default function BlacklistPage() {
         motif: newMotif.trim() || undefined,
         user_id: user!.id,
       });
+      toast.success('Numero ajoute a la blacklist.');
       setNewTelephone('');
       setNewMotif('');
       refetch();
     } catch (err) {
-      alert('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    }
+  }
+
+  async function handleRemove(id: string) {
+    try {
+      await removeFromBlacklist(id);
+      toast.success('Numero retire de la blacklist.');
+      refetch();
+    } catch (err) {
+      toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
     }
   }
 
@@ -104,15 +121,25 @@ export default function BlacklistPage() {
                 <TableHead>Telephone</TableHead>
                 <TableHead>Motif</TableHead>
                 <TableHead>Date d&apos;ajout</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((entry) => (
+              {paginatedItems.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell className="font-mono">{entry.telephone}</TableCell>
                   <TableCell className="text-sm">{entry.motif ?? '-'}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDateTime(entry.created_at)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemove(entry.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -123,12 +150,9 @@ export default function BlacklistPage() {
               Aucun numero dans la blacklist.
             </div>
           )}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} />
         </CardContent>
       </Card>
-
-      <p className="text-sm text-muted-foreground">
-        {blacklist.length} numero{blacklist.length > 1 ? 's' : ''} dans la blacklist
-      </p>
     </div>
   );
 }

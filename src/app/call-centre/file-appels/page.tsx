@@ -1,12 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useDebounce } from '@/hooks/use-debounce';
 import { StatusBadge } from '@/components/status-badge';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import {
   Select,
   SelectContent,
@@ -23,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useRealtime } from '@/hooks/use-realtime';
 import { getCommandes, getRappels, getProduits } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 import { VILLES_RDC } from '@/lib/constants';
@@ -48,12 +52,16 @@ function getTimeDiffMinutes(dateStr: string): number {
 }
 
 export default function FileAppelsPage() {
-  const { data: commandesData, loading: l1 } = useSupabase(() => getCommandes(), []);
+  const { data: commandesData, loading: l1, refetch: refetchCommandes } = useSupabase(() => getCommandes(), []);
   const { data: rappelsData, loading: l2 } = useSupabase(() => getRappels(), []);
   const { data: produitsData, loading: l3 } = useSupabase(() => getProduits(), []);
 
+  // Auto-refresh when commandes table changes
+  useRealtime('commandes', refetchCommandes);
+
   const [statusFilter, setStatusFilter] = useState<string>('tous');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [productFilter, setProductFilter] = useState<string>('tous');
   const [cityFilter, setCityFilter] = useState<string>('tous');
 
@@ -106,13 +114,19 @@ export default function FileAppelsPage() {
   const filteredItems = queueItems.filter((item) => {
     const c = item.commande;
     if (statusFilter !== 'tous' && c.statut !== statusFilter) return false;
-    if (search) {
-      const s = search.toLowerCase();
+    if (debouncedSearch) {
+      const s = debouncedSearch.toLowerCase();
       if (!c.destinataire_nom.toLowerCase().includes(s) && !c.telephone.includes(s) && !c.id.toLowerCase().includes(s)) return false;
+    }
+    if (productFilter !== 'tous') {
+      const hasProduct = (c as unknown as { commande_produits?: { produit_id: string }[] }).commande_produits?.some((cp) => cp.produit_id === productFilter);
+      if (!hasProduct) return false;
     }
     if (cityFilter !== 'tous' && c.ville !== cityFilter) return false;
     return true;
   });
+
+  const { page, setPage, totalPages, paginatedItems } = usePagination(filteredItems, 15);
 
   return (
     <div className="space-y-6">
@@ -209,7 +223,7 @@ export default function FileAppelsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.map((item) => {
+              {paginatedItems.map((item) => {
                 const c = item.commande as typeof allCommandes[0];
                 const firstProduct = c.commande_produits?.[0]?.produit;
 
@@ -262,6 +276,7 @@ export default function FileAppelsPage() {
               )}
             </TableBody>
           </Table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filteredItems.length} />
         </CardContent>
       </Card>
     </div>
