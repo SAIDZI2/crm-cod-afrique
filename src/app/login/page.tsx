@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,6 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -55,7 +53,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(getRoleBasePath(crmUser.role as UserRole));
+      // Full page reload to ensure SSR middleware receives auth cookies
+      window.location.href = getRoleBasePath(crmUser.role as UserRole);
     } catch {
       setError('Une erreur est survenue.');
       setIsLoading(false);
@@ -77,7 +76,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(path);
+    // Full page reload to ensure SSR middleware receives auth cookies
+    window.location.href = path;
   }
 
   return (

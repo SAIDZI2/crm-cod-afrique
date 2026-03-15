@@ -43,27 +43,12 @@ export default function AdminDashboardPage() {
   const { data: commandesData, loading: l4 } = useSupabase(() => getCommandes(), []);
   const [period, setPeriod] = useState<PeriodFilter>('30j');
 
-  if (l1 || l2 || l3 || l4) return <LoadingPage />;
-
-  const kpis = kpisData ?? { total: 0, nouveau: 0, confirme: 0, en_preparation: 0, expedie: 0, livre: 0, echoue: 0, reporte: 0, en_retour: 0, retourne: 0 };
   const users = usersData ?? [];
   const commissions = commissionsData ?? [];
   const allCommandes = commandesData ?? [];
 
   const commandes = filterByPeriod(allCommandes, period);
   const filteredCommissions = filterByPeriod(commissions, period);
-
-  const commissionsEnAttente = filteredCommissions.filter((c) => c.statut === 'en_attente').length;
-  const agentsCC = users.filter((u) => u.role === 'call_center' || u.role === 'superviseur_cc').length;
-  const livreurs = users.filter((u) => u.role === 'livreur' || u.role === 'responsable_logistique').length;
-  const revenuTotal = commandes.filter((c) => c.statut === 'livre').reduce((s, c) => s + c.montant_total - c.remise, 0);
-
-  const kpiCards = [
-    { label: 'Commandes', value: commandes.length },
-    { label: 'Revenu (livre)', value: formatCurrency(revenuTotal) },
-    { label: 'Commissions en attente', value: commissionsEnAttente },
-    { label: 'Agents CC / Livreurs', value: `${agentsCC} / ${livreurs}` },
-  ];
 
   // ---- Chart data: Commandes par jour ----
   const commandesParJour = useMemo(() => {
@@ -110,6 +95,22 @@ export default function AdminDashboardPage() {
         value: count,
       }));
   }, [commandes]);
+
+  if (l1 || l2 || l3 || l4) return <LoadingPage />;
+
+  const kpis = kpisData ?? { total: 0, nouveau: 0, confirme: 0, en_preparation: 0, expedie: 0, livre: 0, echoue: 0, reporte: 0, en_retour: 0, retourne: 0 };
+
+  const commissionsEnAttente = filteredCommissions.filter((c) => c.statut === 'en_attente').length;
+  const agentsCC = users.filter((u) => u.role === 'call_center' || u.role === 'superviseur_cc').length;
+  const livreurs = users.filter((u) => u.role === 'livreur' || u.role === 'responsable_logistique').length;
+  const revenuTotal = commandes.filter((c) => c.statut === 'livre').reduce((s, c) => s + c.montant_total - c.remise, 0);
+
+  const kpiCards = [
+    { label: 'Commandes', value: commandes.length },
+    { label: 'Revenu (livre)', value: formatCurrency(revenuTotal) },
+    { label: 'Commissions en attente', value: commissionsEnAttente },
+    { label: 'Agents CC / Livreurs', value: `${agentsCC} / ${livreurs}` },
+  ];
 
   // ---- Top agents ----
   const ccAgents = users.filter((u) => u.role === 'call_center' || u.role === 'superviseur_cc');
