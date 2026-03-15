@@ -132,6 +132,28 @@ export async function getCommandeById(id: string) {
   return data as Commande & { user?: User; agent?: User; livreur?: User; commande_produits: (CommandeProduit & { produit: Produit })[]; appels: Appel[] };
 }
 
+export async function getCommandesByUserIds(userIds: string[]) {
+  if (userIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('commandes')
+    .select('*, commande_produits(*, produit:produits(*))')
+    .in('user_id', userIds)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as (Commande & { commande_produits: (CommandeProduit & { produit: Produit })[] })[];
+}
+
+export async function getCommissionsByUserIds(userIds: string[]) {
+  if (userIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('commissions')
+    .select('*, commande:commandes(*), user:users!commissions_user_id_fkey(*)')
+    .in('user_id', userIds)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as (Commission & { commande: Commande; user: User })[];
+}
+
 export async function getCommandesByTelephone(telephone: string) {
   const { data, error } = await supabase
     .from('commandes')

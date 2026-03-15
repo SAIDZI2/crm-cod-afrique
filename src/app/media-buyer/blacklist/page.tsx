@@ -43,7 +43,7 @@ export default function BlacklistPage() {
 
   async function handleAdd() {
     if (!newTelephone.trim()) {
-      toast.error('Veuillez entrer un numero de telephone.');
+      toast.error('Veuillez entrer un numéro de téléphone.');
       return;
     }
     try {
@@ -62,6 +62,7 @@ export default function BlacklistPage() {
   }
 
   async function handleRemove(id: string) {
+    if (!window.confirm('Êtes-vous sûr de vouloir retirer ce numéro de la blacklist ?')) return;
     try {
       await removeFromBlacklist(id);
       toast.success('Numéro retiré de la blacklist.');
@@ -107,7 +108,7 @@ export default function BlacklistPage() {
 
       {/* Search */}
       <Input
-        placeholder="Rechercher un numero ou motif..."
+        placeholder="Rechercher un numéro ou motif..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
@@ -148,7 +149,7 @@ export default function BlacklistPage() {
           </Table>
           {filtered.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              Aucun numero dans la blacklist.
+              Aucun numéro dans la blacklist.
             </div>
           )}
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} />

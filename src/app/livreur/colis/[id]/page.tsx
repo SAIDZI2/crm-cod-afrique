@@ -36,7 +36,9 @@ export default function LivreurColisDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const { data: tcData, loading, refetch } = useSupabase(() => getAllTourneeCommandes(), []);
+  const { data: tcData, loading, refetch } = useSupabase(
+    () => user ? getAllTourneeCommandes(user.id) : Promise.resolve([]), [user?.id]
+  );
 
   if (loading) return <LoadingPage />;
   const allTc = tcData ?? [];
@@ -88,9 +90,9 @@ export default function LivreurColisDetailPage() {
         montant_collecte: Number(montantCollecte) || 0,
         heure_livraison: new Date().toISOString(),
       });
-      await handleDeliveryComplete(commande!.id);
+      await handleDeliveryComplete(commande.id);
       resetForm();
-      setFeedback({ type: 'success', message: 'Livraison confirmee avec succes.' });
+      setFeedback({ type: 'success', message: 'Livraison confirmée avec succès.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -109,16 +111,16 @@ export default function LivreurColisDetailPage() {
         motif_retour: motifRetour as MotifRetour,
       });
       await createRetour({
-        commande_id: commande!.id,
+        commande_id: commande.id,
         livreur_id: user.id,
         motif: motifRetour as MotifRetour,
         note: noteAction || undefined,
         recu_au_depot: false,
         date_retour: new Date().toISOString(),
       });
-      await updateCommandeStatutSecure(commande!.id, 'en_retour');
+      await updateCommandeStatutSecure(commande.id, 'en_retour');
       resetForm();
-      setFeedback({ type: 'success', message: 'Retour declare avec succes.' });
+      setFeedback({ type: 'success', message: 'Retour déclaré avec succès.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -133,9 +135,9 @@ export default function LivreurColisDetailPage() {
     setFeedback(null);
     try {
       await updateTourneeCommande(tc.id, { statut_livraison: 'reporte', note: noteAction || undefined });
-      await updateCommandeStatutSecure(commande!.id, 'reporte');
+      await updateCommandeStatutSecure(commande.id, 'reporte');
       resetForm();
-      setFeedback({ type: 'success', message: 'Report enregistre avec succes.' });
+      setFeedback({ type: 'success', message: 'Report enregistré avec succès.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -150,7 +152,7 @@ export default function LivreurColisDetailPage() {
     setFeedback(null);
     try {
       await createAppel({
-        commande_id: commande!.id,
+        commande_id: commande.id,
         agent_id: user.id,
         date_appel: new Date().toISOString(),
         duree_secondes: 0,
@@ -158,7 +160,7 @@ export default function LivreurColisDetailPage() {
         note: noteAction,
       });
       resetForm();
-      setFeedback({ type: 'success', message: 'Probleme signale avec succes.' });
+      setFeedback({ type: 'success', message: 'Problème signalé avec succès.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -171,7 +173,7 @@ export default function LivreurColisDetailPage() {
     <div className="space-y-4 max-w-lg mx-auto">
       <Button variant="outline" onClick={() => router.back()} className="min-h-12">
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Retour a la tournee
+        Retour à la tournée
       </Button>
 
       {feedback && (
@@ -237,7 +239,7 @@ export default function LivreurColisDetailPage() {
           )}
           <Separator />
           <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground mb-1">Montant a collecter</p>
+            <p className="text-sm text-muted-foreground mb-1">Montant à collecter</p>
             <p className="text-4xl font-bold text-green-700">
               {formatCurrency(commande.montant_total)}
             </p>
@@ -323,7 +325,7 @@ export default function LivreurColisDetailPage() {
               onClick={() => setAction('reporter')}
             >
               <Clock className="w-4 h-4 mr-2" />
-              Reporter a demain
+              Reporter à demain
             </Button>
             <Button
               variant="outline"
@@ -346,7 +348,7 @@ export default function LivreurColisDetailPage() {
               <p><span className="text-muted-foreground">Montant attendu:</span> {formatCurrency(commande.montant_total)}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium">Montant reellement collecte</Label>
+              <Label className="text-sm font-medium">Montant réellement collecté</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -372,13 +374,13 @@ export default function LivreurColisDetailPage() {
       {action === 'retour' && (
         <Card className="border-red-300 bg-red-50">
           <CardContent className="p-4 space-y-3">
-            <h3 className="font-bold text-red-800 text-lg">Declarer un retour</h3>
+            <h3 className="font-bold text-red-800 text-lg">Déclarer un retour</h3>
             <p className="text-sm">
               Motif: <span className="font-medium">{MOTIFS_RETOUR.find(m => m.value === motifRetour)?.label}</span>
             </p>
             <div>
               <Label className="text-sm font-medium">Note (optionnel)</Label>
-              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Details supplementaires..." />
+              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Détails supplémentaires..." />
             </div>
             <div className="flex gap-2">
               <Button className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white" onClick={handleConfirmRetour} disabled={actionLoading}>
@@ -396,7 +398,7 @@ export default function LivreurColisDetailPage() {
       {action === 'reporter' && (
         <Card className="border-orange-300 bg-orange-50">
           <CardContent className="p-4 space-y-3">
-            <h3 className="font-bold text-orange-800 text-lg">Reporter a demain</h3>
+            <h3 className="font-bold text-orange-800 text-lg">Reporter à demain</h3>
             <div>
               <Label className="text-sm font-medium">Raison (optionnel)</Label>
               <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-20" placeholder="Pourquoi reporter..." />
@@ -417,10 +419,10 @@ export default function LivreurColisDetailPage() {
       {action === 'probleme' && (
         <Card className="border-yellow-300 bg-yellow-50">
           <CardContent className="p-4 space-y-3">
-            <h3 className="font-bold text-yellow-800 text-lg">Signaler un probleme</h3>
+            <h3 className="font-bold text-yellow-800 text-lg">Signaler un problème</h3>
             <div>
-              <Label className="text-sm font-medium">Description du probleme</Label>
-              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-24" placeholder="Decrivez le probleme..." />
+              <Label className="text-sm font-medium">Description du problème</Label>
+              <Textarea value={noteAction} onChange={e => setNoteAction(e.target.value)} className="mt-1 min-h-24" placeholder="Décrivez le problème..." />
             </div>
             <div className="flex gap-2">
               <Button className="flex-1 min-h-12 bg-yellow-600 hover:bg-yellow-700 text-white" onClick={handleConfirmProbleme} disabled={actionLoading || !noteAction}>

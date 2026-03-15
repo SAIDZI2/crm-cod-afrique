@@ -16,14 +16,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { getCommandes, getRappels, getAppels } from '@/lib/supabase/queries';
 import { formatCurrency, formatDateTime } from '@/lib/constants';
 import { Phone } from 'lucide-react';
 
 export default function CallCentreDashboard() {
+  const { user } = useAuth();
   const { data: commandesData, loading: loadingCommandes } = useSupabase(() => getCommandes(), []);
-  const { data: rappelsData, loading: loadingRappels } = useSupabase(() => getRappels(), []);
-  const { data: appelsData, loading: loadingAppels } = useSupabase(() => getAppels(), []);
+  const { data: rappelsData, loading: loadingRappels } = useSupabase(
+    () => user ? getRappels(user.id) : Promise.resolve([]), [user?.id]
+  );
+  const { data: appelsData, loading: loadingAppels } = useSupabase(
+    () => user ? getAppels(user.id) : Promise.resolve([]), [user?.id]
+  );
 
   if (loadingCommandes || loadingRappels || loadingAppels) return <LoadingPage />;
 
@@ -34,9 +40,11 @@ export default function CallCentreDashboard() {
   const stats = (() => {
     const nouveau = commandes.filter((c) => c.statut === 'nouveau').length;
     const rappelsAujourdhui = rappels.filter((r) => r.statut === 'en_attente').length;
-    const confirme = commandes.filter((c) => c.statut === 'confirme').length;
-    const echoue = commandes.filter((c) => c.statut === 'echoue').length;
-    const reporte = commandes.filter((c) => c.statut === 'reporte').length;
+    // Filter by current agent for personal stats
+    const myCommandes = user ? commandes.filter((c) => (c as unknown as { agent_id?: string }).agent_id === user.id) : commandes;
+    const confirme = myCommandes.filter((c) => c.statut === 'confirme').length;
+    const echoue = myCommandes.filter((c) => c.statut === 'echoue').length;
+    const reporte = myCommandes.filter((c) => c.statut === 'reporte').length;
     const traites = confirme + echoue + reporte;
     const tauxConfirmation = traites > 0 ? Math.round((confirme / traites) * 100) : 0;
 
@@ -74,7 +82,7 @@ export default function CallCentreDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard Agent</h1>
-        <p className="text-sm text-gray-500 mt-1">Vue d&apos;ensemble de votre activite</p>
+        <p className="text-sm text-gray-500 mt-1">Vue d&apos;ensemble de votre activité</p>
       </div>
 
       {/* KPI Cards */}
@@ -89,31 +97,31 @@ export default function CallCentreDashboard() {
           label="Rappels aujourd'hui"
           value={stats.rappelsAujourdhui}
           color="border-l-orange-500"
-          subtitle="A effectuer"
+          subtitle="À effectuer"
         />
         <KpiCard
           label="Confirmés aujourd'hui"
           value={stats.confirme}
           color="border-l-green-500"
-          subtitle="Commandes validees"
+          subtitle="Commandes validées"
         />
         <KpiCard
-          label="Echoues aujourd'hui"
+          label="Échoués aujourd'hui"
           value={stats.echoue}
           color="border-l-red-500"
           subtitle="Non convertis"
         />
         <KpiCard
-          label="Total traites"
+          label="Total traités"
           value={stats.traites}
           color="border-l-gray-500"
-          subtitle="Confirmes + Echoues + Reportes"
+          subtitle="Confirmés + Échoués + Reportés"
         />
         <KpiCard
           label="Taux de confirmation"
           value={`${stats.tauxConfirmation}%`}
           color="border-l-emerald-500"
-          subtitle="Confirmes / Traites"
+          subtitle="Confirmés / Traités"
         />
       </div>
 
@@ -125,11 +133,11 @@ export default function CallCentreDashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Appels passes</span>
+              <span className="text-sm text-muted-foreground">Appels passés</span>
               <span className="font-semibold">{performanceStats.appelsPassés}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Duree moyenne</span>
+              <span className="text-sm text-muted-foreground">Durée moyenne</span>
               <span className="font-semibold">{performanceStats.dureeMoyenne}</span>
             </div>
             <div className="flex justify-between items-center">

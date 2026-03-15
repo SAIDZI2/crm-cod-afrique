@@ -66,7 +66,9 @@ export default function AdminProduitsPage() {
         try {
           const imageUrl = await uploadProductImage(imageFile, newProduit.id);
           await updateProduit(newProduit.id, { image_url: imageUrl } as Record<string, unknown>);
-        } catch { /* image upload is optional, don't block creation */ }
+        } catch {
+          toast.warning('Produit créé mais l\'upload de l\'image a échoué. Vous pouvez réessayer via la modification.');
+        }
       }
       toast.success('Produit créé !');
       resetForm();
@@ -104,6 +106,7 @@ export default function AdminProduitsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir désactiver ce produit ?')) return;
     try {
       await deleteProduit(id);
       toast.success('Produit désactivé.');

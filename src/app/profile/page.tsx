@@ -22,7 +22,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [nom, setNom] = useState(user?.nom ?? '');
   const [saving, setSaving] = useState(false);
 
@@ -36,13 +36,14 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!nom.trim()) {
-      toast.error('Le nom ne peut pas etre vide.');
+      toast.error('Le nom ne peut pas être vide.');
       return;
     }
     setSaving(true);
     try {
       await updateUser(user.id, { nom: nom.trim() } as Record<string, unknown>);
-      toast.success('Profil mis a jour.');
+      await refreshUser();
+      toast.success('Profil mis à jour.');
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
     } finally {
@@ -79,7 +80,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-muted-foreground" />
               <div>
-                <p className="text-xs text-muted-foreground">Role</p>
+                <p className="text-xs text-muted-foreground">Rôle</p>
                 <Badge variant="secondary">{roleLabels[user.role] ?? user.role}</Badge>
               </div>
             </div>
@@ -130,7 +131,7 @@ export default function ProfilePage() {
               disabled
               className="mt-1 bg-muted"
             />
-            <p className="text-xs text-muted-foreground mt-1">L&apos;email ne peut pas etre modifie.</p>
+            <p className="text-xs text-muted-foreground mt-1">L&apos;email ne peut pas être modifié.</p>
           </div>
           <Button onClick={handleSave} disabled={saving || nom.trim() === user.nom}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

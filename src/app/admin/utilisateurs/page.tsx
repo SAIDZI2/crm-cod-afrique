@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
         role: editingUser.role,
         commission_pct: editingUser.commission_pct,
       } as Record<string, unknown>);
-      toast.success('Utilisateur modifie.');
+      toast.success('Utilisateur modifié.');
       setEditDialog(false);
       setEditingUser(null);
       refetch();
@@ -81,9 +81,11 @@ export default function AdminUsersPage() {
   };
 
   const handleToggleActif = async (userId: string, currentActif: boolean) => {
+    const action = currentActif ? 'désactiver' : 'activer';
+    if (!window.confirm(`Êtes-vous sûr de vouloir ${action} cet utilisateur ?`)) return;
     try {
       await updateUser(userId, { actif: !currentActif } as Record<string, unknown>);
-      toast.success(!currentActif ? 'Utilisateur active.' : 'Utilisateur desactive.');
+      toast.success(!currentActif ? 'Utilisateur activé.' : 'Utilisateur désactivé.');
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Inconnue'));
@@ -103,7 +105,7 @@ export default function AdminUsersPage() {
       });
       resetForm();
       setShowDialog(false);
-      setFeedback({ type: 'success', message: `Utilisateur "${nom}" cree avec succes.` });
+      setFeedback({ type: 'success', message: `Utilisateur "${nom}" créé avec succès.` });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -123,7 +125,7 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Utilisateurs</h1>
-          <p className="text-sm text-muted-foreground">Gestion des roles et activation</p>
+          <p className="text-sm text-muted-foreground">Gestion des rôles et activation</p>
         </div>
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogTrigger
@@ -136,7 +138,7 @@ export default function AdminUsersPage() {
           />
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Creer un utilisateur</DialogTitle>
+              <DialogTitle>Créer un utilisateur</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div>
@@ -164,7 +166,7 @@ export default function AdminUsersPage() {
                 <Label className="text-sm font-medium">Role</Label>
                 <Select value={role} onValueChange={(val) => val && setRole(val)}>
                   <SelectTrigger className="mt-1 w-full">
-                    <SelectValue placeholder="Selectionner un role" />
+                    <SelectValue placeholder="Sélectionner un rôle" />
                   </SelectTrigger>
                   <SelectContent>
                     {roleOptions.map(r => (
@@ -194,7 +196,7 @@ export default function AdminUsersPage() {
                 disabled={!nom || !email || !role || formLoading}
               >
                 {formLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
-                Creer
+                Créer
               </Button>
             </div>
           </DialogContent>

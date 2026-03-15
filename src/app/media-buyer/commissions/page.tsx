@@ -13,7 +13,7 @@ import {
 import { KpiCard } from '@/components/kpi-card';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
-import { getSubAffiliates, getCommandes, getCommissions } from '@/lib/supabase/queries';
+import { getSubAffiliates, getCommandesByUserIds, getCommissionsByUserIds } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 
 export default function CommissionsPage() {
@@ -22,8 +22,19 @@ export default function CommissionsPage() {
     () => (user ? getSubAffiliates(user.id) : Promise.resolve([])),
     [user?.id]
   );
-  const { data: commandesData, loading: l2 } = useSupabase(() => getCommandes(), []);
-  const { data: commissionsData, loading: l3 } = useSupabase(() => getCommissions(), []);
+
+  // Scope queries to only sub-affiliate IDs (avoid fetching all data)
+  const affilieIds = (sousAffiliesData ?? []).map(a => a.id);
+  const affilieIdsKey = affilieIds.join(',');
+
+  const { data: commandesData, loading: l2 } = useSupabase(
+    () => affilieIds.length > 0 ? getCommandesByUserIds(affilieIds) : Promise.resolve([]),
+    [affilieIdsKey]
+  );
+  const { data: commissionsData, loading: l3 } = useSupabase(
+    () => affilieIds.length > 0 ? getCommissionsByUserIds(affilieIds) : Promise.resolve([]),
+    [affilieIdsKey]
+  );
 
   if (l1 || l2 || l3) return <LoadingPage />;
   const sousAffilies = sousAffiliesData ?? [];
@@ -35,7 +46,7 @@ export default function CommissionsPage() {
     const livrees = affilieCommandes.filter((c) => c.statut === 'livre');
     const affilieCommissions = commissions.filter((c) => c.user_id === affilie.id);
     const totalCommission = affilieCommissions.reduce((s, c) => s + c.montant, 0);
-    const aPayer = affilieCommissions
+    const aPayér = affilieCommissions
       .filter((c) => c.statut === 'approuvee')
       .reduce((s, c) => s + c.montant, 0);
     const enAttente = affilieCommissions
@@ -50,30 +61,30 @@ export default function CommissionsPage() {
       totalCommandes: affilieCommandes.length,
       livrees: livrees.length,
       totalCommission,
-      aPayer,
+      aPayér,
       enAttente,
       paye,
     };
   });
 
-  const totalAPayer = affilieStats.reduce((s, a) => s + a.aPayer, 0);
+  const totalAPayér = affilieStats.reduce((s, a) => s + a.aPayér, 0);
   const totalEnAttente = affilieStats.reduce((s, a) => s + a.enAttente, 0);
-  const totalPaye = affilieStats.reduce((s, a) => s + a.paye, 0);
+  const totalPayé = affilieStats.reduce((s, a) => s + a.paye, 0);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Commissions Sous-affilies</h1>
+      <h1 className="text-2xl font-bold">Commissions Sous-affiliés</h1>
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
-          label="Total Sous-affilies"
+          label="Total Sous-affiliés"
           value={sousAffilies.length}
           color="border-blue-500"
         />
         <KpiCard
-          label="A Payer"
-          value={formatCurrency(totalAPayer)}
+          label="À Payér"
+          value={formatCurrency(totalAPayér)}
           color="border-orange-500"
         />
         <KpiCard
@@ -82,8 +93,8 @@ export default function CommissionsPage() {
           color="border-yellow-500"
         />
         <KpiCard
-          label="Paye"
-          value={formatCurrency(totalPaye)}
+          label="Payé"
+          value={formatCurrency(totalPayé)}
           color="border-green-500"
         />
       </div>
@@ -91,7 +102,7 @@ export default function CommissionsPage() {
       {/* Sub-affiliates Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Sous-affilies et leurs Commissions</CardTitle>
+          <CardTitle>Sous-affiliés et leurs Commissions</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -100,12 +111,12 @@ export default function CommissionsPage() {
                 <TableHead>Nom</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Commandes</TableHead>
-                <TableHead>Livrees</TableHead>
+                <TableHead>Livrées</TableHead>
                 <TableHead>Commission %</TableHead>
                 <TableHead>Total Commission</TableHead>
-                <TableHead>A Payer</TableHead>
+                <TableHead>À Payér</TableHead>
                 <TableHead>En Attente</TableHead>
-                <TableHead>Paye</TableHead>
+                <TableHead>Payé</TableHead>
                 <TableHead>Statut</TableHead>
               </TableRow>
             </TableHeader>
@@ -125,7 +136,7 @@ export default function CommissionsPage() {
                     {formatCurrency(affilie.totalCommission)}
                   </TableCell>
                   <TableCell className="text-orange-600 font-medium">
-                    {formatCurrency(affilie.aPayer)}
+                    {formatCurrency(affilie.aPayér)}
                   </TableCell>
                   <TableCell className="text-yellow-600 font-medium">
                     {formatCurrency(affilie.enAttente)}
@@ -151,7 +162,7 @@ export default function CommissionsPage() {
           </Table>
           {affilieStats.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              Aucun sous-affilie dans votre equipe.
+              Aucun sous-affilié dans votre équipe.
             </div>
           )}
         </CardContent>
