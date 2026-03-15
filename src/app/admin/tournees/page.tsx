@@ -23,9 +23,9 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Truck } from 'lucide-react';
 
 const STATUT_TOURNEE_CONFIG: Record<string, { label: string; color: string }> = {
-  en_preparation: { label: 'En Preparation', color: 'bg-yellow-100 text-yellow-700' },
+  en_preparation: { label: 'En Préparation', color: 'bg-yellow-100 text-yellow-700' },
   en_cours: { label: 'En Cours', color: 'bg-blue-100 text-blue-700' },
-  cloturee: { label: 'Cloturee', color: 'bg-green-100 text-green-700' },
+  cloturee: { label: 'Clôturée', color: 'bg-green-100 text-green-700' },
 };
 
 export default function AdminTourneesPage() {
@@ -54,11 +54,11 @@ export default function AdminTourneesPage() {
 
   const handleCreate = async () => {
     if (!selectedLivreur || !selectedDate) {
-      toast.error('Selectionnez un livreur et une date.');
+      toast.error('Sélectionnez un livreur et une date.');
       return;
     }
     if (selectedCommandes.length === 0) {
-      toast.error('Selectionnez au moins une commande.');
+      toast.error('Sélectionnez au moins une commande.');
       return;
     }
     setFormLoading(true);
@@ -69,16 +69,18 @@ export default function AdminTourneesPage() {
         statut: 'en_cours',
       });
 
-      for (let i = 0; i < selectedCommandes.length; i++) {
-        await createTourneeCommande({
-          tournee_id: tournee.id,
-          commande_id: selectedCommandes[i],
-          ordre: i + 1,
-        });
-        await updateCommandeStatut(selectedCommandes[i], 'en_preparation', undefined, selectedLivreur);
-      }
+      await Promise.all(
+        selectedCommandes.map(async (cmdId, i) => {
+          await createTourneeCommande({
+            tournee_id: tournee.id,
+            commande_id: cmdId,
+            ordre: i + 1,
+          });
+          await updateCommandeStatut(cmdId, 'en_preparation', undefined, selectedLivreur);
+        })
+      );
 
-      toast.success(`Tournee creee avec ${selectedCommandes.length} commande(s)!`);
+      toast.success(`Tournée créée avec ${selectedCommandes.length} commande(s) !`);
       setShowCreate(false);
       setSelectedLivreur('');
       setSelectedDate('');
@@ -96,21 +98,21 @@ export default function AdminTourneesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Gestion des Tournees</h1>
-          <p className="text-sm text-muted-foreground">{tournees.length} tournees · {cmdConfirmees.length} commandes confirmees en attente</p>
+          <h1 className="text-2xl font-bold">Gestion des Tournées</h1>
+          <p className="text-sm text-muted-foreground">{tournees.length} tournées · {cmdConfirmees.length} commandes confirmées en attente</p>
         </div>
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogTrigger render={<Button><Plus className="w-4 h-4 mr-2" />Nouvelle tournee</Button>} />
+          <DialogTrigger render={<Button><Plus className="w-4 h-4 mr-2" />Nouvelle tournée</Button>} />
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Creer une tournee</DialogTitle>
+              <DialogTitle>Créer une tournée</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Livreur *</Label>
                   <Select value={selectedLivreur} onValueChange={(v) => v && setSelectedLivreur(v)}>
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selectionner" /></SelectTrigger>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                     <SelectContent>
                       {livreurs.map((l) => (
                         <SelectItem key={l.id} value={l.id}>{l.nom}</SelectItem>
@@ -125,10 +127,10 @@ export default function AdminTourneesPage() {
               </div>
 
               <div>
-                <Label className="mb-2 block">Commandes confirmees ({cmdConfirmees.length} disponibles)</Label>
+                <Label className="mb-2 block">Commandes confirmées ({cmdConfirmees.length} disponibles)</Label>
                 <div className="max-h-60 overflow-y-auto border rounded-lg">
                   {cmdConfirmees.length === 0 ? (
-                    <div className="p-4 text-center text-muted-foreground text-sm">Aucune commande confirmee.</div>
+                    <div className="p-4 text-center text-muted-foreground text-sm">Aucune commande confirmée.</div>
                   ) : (
                     cmdConfirmees.map((cmd) => (
                       <div
@@ -157,7 +159,7 @@ export default function AdminTourneesPage() {
                 </div>
                 {selectedCommandes.length > 0 && (
                   <p className="text-sm text-blue-600 mt-2 font-medium">
-                    {selectedCommandes.length} commande(s) selectionnee(s)
+                    {selectedCommandes.length} commande(s) sélectionnée(s)
                   </p>
                 )}
               </div>
@@ -165,7 +167,7 @@ export default function AdminTourneesPage() {
             <DialogFooter>
               <Button onClick={handleCreate} disabled={formLoading}>
                 {formLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Truck className="w-4 h-4 mr-2" />}
-                Creer la tournee
+                Créer la tournée
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -174,7 +176,7 @@ export default function AdminTourneesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tournees existantes</CardTitle>
+          <CardTitle>Tournées existantes</CardTitle>
         </CardHeader>
         <CardContent className="overflow-auto">
           <Table>
@@ -183,8 +185,8 @@ export default function AdminTourneesPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead>Creation</TableHead>
-                <TableHead>Cloture</TableHead>
+                <TableHead>Création</TableHead>
+                <TableHead>Clôture</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -206,7 +208,7 @@ export default function AdminTourneesPage() {
               })}
               {tournees.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune tournee.</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune tournée.</TableCell>
                 </TableRow>
               )}
             </TableBody>

@@ -67,7 +67,7 @@ export default function AdminCommandesPage() {
         <div>
           <h1 className="text-2xl font-bold">Toutes les Commandes</h1>
           <p className="text-sm text-muted-foreground">
-            {stats.total} total — {stats.nouveau} nouveaux — {stats.confirme} confirmes — {stats.livre} livres
+            {stats.total} total — {stats.nouveau} nouveaux — {stats.confirme} confirmés — {stats.livre} livrés
           </p>
         </div>
         <Button
@@ -149,7 +149,7 @@ export default function AdminCommandesPage() {
                     {(commande as unknown as { user?: { nom: string } }).user?.nom ?? '-'}
                   </TableCell>
                   <TableCell>
-                    <Link href={`/call-centre/commande/${commande.id}`}>
+                    <Link href={`/admin/commande/${commande.id}`}>
                       <Button variant="ghost" size="sm">
                         <Eye className="w-3 h-3 mr-1" />
                         Voir

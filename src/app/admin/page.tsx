@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {commandesParJour.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnee.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnée.</p>
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={commandesParJour}>
@@ -194,7 +194,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {revenuParJour.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnee.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnée.</p>
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={revenuParJour}>
@@ -214,11 +214,11 @@ export default function AdminDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Repartition par statut</CardTitle>
+            <CardTitle>Répartition par statut</CardTitle>
           </CardHeader>
           <CardContent>
             {statutData.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnee.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnée.</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>

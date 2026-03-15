@@ -88,7 +88,7 @@ export function Sidebar({ title, titleColor, items }: SidebarProps) {
           className="flex items-center gap-2 text-sm text-gray-400 hover:text-white w-full px-1 py-1"
         >
           <LogOut className="w-4 h-4" />
-          Deconnexion
+          Déconnexion
         </button>
       </div>
     </aside>

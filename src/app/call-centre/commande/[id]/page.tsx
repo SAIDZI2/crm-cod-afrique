@@ -90,10 +90,10 @@ export default function CommandeDetailPage() {
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <AlertTriangle className="w-12 h-12 text-yellow-500" />
         <h2 className="text-xl font-semibold">Commande introuvable</h2>
-        <p className="text-muted-foreground">L&apos;identifiant {commandeId} ne correspond a aucune commande.</p>
+        <p className="text-muted-foreground">L&apos;identifiant {commandeId} ne correspond à aucune commande.</p>
         <Button variant="outline" onClick={() => router.push('/call-centre/file-appels')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour a la file
+          Retour à la file
         </Button>
       </div>
     );
@@ -121,7 +121,7 @@ export default function CommandeDetailPage() {
     setFeedback(null);
     try {
       await handler();
-      setFeedback({ type: 'success', message: `Action "${action}" effectuee avec succes.` });
+      setFeedback({ type: 'success', message: `Action "${action}" effectuée avec succès.` });
       setCallActive(false);
       setCallSeconds(0);
       refetch();
@@ -202,12 +202,12 @@ export default function CommandeDetailPage() {
   const isLoading = (action: string) => actionLoading === action;
 
   const resultatLabels: Record<string, string> = {
-    confirme: 'Confirme',
-    echoue: 'Echoue',
-    reporte: 'Reporte',
-    pas_de_reponse: 'Pas de reponse',
-    occupe: 'Occupe',
-    numero_invalide: 'Numero invalide',
+    confirme: 'Confirmé',
+    echoue: 'Échoué',
+    reporte: 'Reporté',
+    pas_de_reponse: 'Pas de réponse',
+    occupe: 'Occupé',
+    numero_invalide: 'Numéro invalide',
   };
 
   const resultatColors: Record<string, string> = {
@@ -289,12 +289,12 @@ export default function CommandeDetailPage() {
               <p className="text-xs text-muted-foreground mb-2">Historique client</p>
               {otherOrders.length === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-3 text-sm text-muted-foreground">
-                  Premiere commande de ce client.
+                  Première commande de ce client.
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">{otherOrders.length} commande{otherOrders.length > 1 ? 's' : ''} precedente{otherOrders.length > 1 ? 's' : ''}</span>
+                    <span className="font-medium">{otherOrders.length} commande{otherOrders.length > 1 ? 's' : ''} précédente{otherOrders.length > 1 ? 's' : ''}</span>
                     <span className="font-medium">{formatCurrency(totalHistoryAmount)}</span>
                   </div>
                   {otherOrders.slice(0, 3).map((o) => (
@@ -404,92 +404,99 @@ export default function CommandeDetailPage() {
           <CardTitle className="text-base">Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          {!canConfirm && !canEchoue && !canReporter && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm text-muted-foreground mb-3">
+          {!canConfirm && !canEchoue && !canReporter ? (
+            <div className="bg-gray-50 rounded-lg p-3 text-sm text-muted-foreground">
               Cette commande est au statut &quot;{commande.statut}&quot; — aucune action disponible.
+              <div className="mt-3">
+                <Button variant="outline" className="gap-2" onClick={() => router.back()}>
+                  <ArrowLeft className="w-4 h-4" />
+                  Retour
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              <Button
+                className="bg-green-600 hover:bg-green-700 gap-2"
+                onClick={handleConfirmer}
+                disabled={!!actionLoading || !canConfirm}
+              >
+                {isLoading('Confirmer') ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Confirmer
+              </Button>
+
+              <Button
+                variant="destructive"
+                className="gap-2"
+                onClick={handleEchoue}
+                disabled={!!actionLoading || !canEchoue}
+              >
+                {isLoading('Échoué') ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                Échoué
+              </Button>
+
+              <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+                <DialogTrigger
+                  render={
+                    <Button className="bg-orange-500 hover:bg-orange-600 gap-2" disabled={!!actionLoading || !canReporter}>
+                      <Clock className="w-4 h-4" />
+                      Reporter
+                    </Button>
+                  }
+                />
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Planifier un rappel</DialogTitle>
+                    <DialogDescription>
+                      Choisissez la date et l&apos;heure du rappel pour cette commande.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input
+                        type="date"
+                        value={reportDate}
+                        onChange={(e) => setReportDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Heure</Label>
+                      <Input
+                        type="time"
+                        value={reportTime}
+                        onChange={(e) => setReportTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600"
+                      onClick={handleReporter}
+                      disabled={!reportDate || !reportTime || !!actionLoading}
+                    >
+                      {isLoading('Reporter') ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Confirmer le rappel
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                variant="outline"
+                className="bg-gray-900 text-white hover:bg-gray-800 gap-2"
+                onClick={handleBlacklister}
+                disabled={!!actionLoading}
+              >
+                {isLoading('Blacklister') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
+                Blacklister
+              </Button>
+
+              <Button variant="outline" className="gap-2" onClick={() => router.back()}>
+                Annuler
+              </Button>
             </div>
           )}
-          <div className="flex flex-wrap gap-3">
-            <Button
-              className="bg-green-600 hover:bg-green-700 gap-2"
-              onClick={handleConfirmer}
-              disabled={!!actionLoading || !canConfirm}
-            >
-              {isLoading('Confirmer') ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              Confirmer
-            </Button>
-
-            <Button
-              variant="destructive"
-              className="gap-2"
-              onClick={handleEchoue}
-              disabled={!!actionLoading || !canEchoue}
-            >
-              {isLoading('Echoue') ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-              Echoue
-            </Button>
-
-            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-              <DialogTrigger
-                render={
-                  <Button className="bg-orange-500 hover:bg-orange-600 gap-2" disabled={!!actionLoading || !canReporter}>
-                    <Clock className="w-4 h-4" />
-                    Reporter
-                  </Button>
-                }
-              />
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Planifier un rappel</DialogTitle>
-                  <DialogDescription>
-                    Choisissez la date et l&apos;heure du rappel pour cette commande.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-2">
-                  <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={reportDate}
-                      onChange={(e) => setReportDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Heure</Label>
-                    <Input
-                      type="time"
-                      value={reportTime}
-                      onChange={(e) => setReportTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    className="bg-orange-500 hover:bg-orange-600"
-                    onClick={handleReporter}
-                    disabled={!reportDate || !reportTime || !!actionLoading}
-                  >
-                    {isLoading('Reporter') ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Confirmer le rappel
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Button
-              variant="outline"
-              className="bg-gray-900 text-white hover:bg-gray-800 gap-2"
-              onClick={handleBlacklister}
-              disabled={!!actionLoading}
-            >
-              {isLoading('Blacklister') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
-              Blacklister
-            </Button>
-
-            <Button variant="outline" className="gap-2" onClick={() => router.back()}>
-              Annuler
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -521,7 +528,7 @@ export default function CommandeDetailPage() {
           <div>
             <p className="text-sm font-medium mb-3">Historique des appels</p>
             {appels.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun appel enregistre pour cette commande.</p>
+              <p className="text-sm text-muted-foreground">Aucun appel enregistré pour cette commande.</p>
             ) : (
               <div className="space-y-2">
                 {appels.map((appel) => (
@@ -536,7 +543,7 @@ export default function CommandeDetailPage() {
                           {formatDateTime(appel.date_appel)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Duree: {Math.floor(appel.duree_secondes / 60)}m{' '}
+                          Durée: {Math.floor(appel.duree_secondes / 60)}m{' '}
                           {appel.duree_secondes % 60}s
                         </p>
                       </div>
@@ -580,7 +587,7 @@ export default function CommandeDetailPage() {
             <div className="space-y-4">
               <div className="border rounded-lg p-4 bg-blue-50/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-blue-600">Etape 1</Badge>
+                  <Badge className="bg-blue-600">Étape1</Badge>
                   <span className="font-medium text-sm">Accueil</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -592,47 +599,47 @@ export default function CommandeDetailPage() {
 
               <div className="border rounded-lg p-4 bg-green-50/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-green-600">Etape 2</Badge>
+                  <Badge className="bg-green-600">Étape2</Badge>
                   <span className="font-medium text-sm">Confirmation des informations</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   &quot;Je voudrais confirmer votre commande. Votre adresse de livraison est bien le{' '}
                   {commande.adresse}, {commande.ville} ? Le montant total est de{' '}
-                  {formatCurrency(commande.montant_total)}, payable a la livraison.&quot;
+                  {formatCurrency(commande.montant_total)}, payable à la livraison.&quot;
                 </p>
               </div>
 
               <div className="border rounded-lg p-4 bg-yellow-50/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-yellow-600">Etape 3</Badge>
+                  <Badge className="bg-yellow-600">Étape3</Badge>
                   <span className="font-medium text-sm">Upsell</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  &quot;Nous avons egalement une offre speciale en ce moment. Souhaitez-vous ajouter
-                  un produit complementaire a prix reduit ?&quot;
+                  &quot;Nous avons également une offre spéciale en ce moment. Souhaitez-vous ajouter
+                  un produit complémentaire à prix réduit ?&quot;
                 </p>
               </div>
 
               <div className="border rounded-lg p-4 bg-purple-50/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-purple-600">Etape 4</Badge>
+                  <Badge className="bg-purple-600">Étape4</Badge>
                   <span className="font-medium text-sm">Gestion des objections</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Si le client hesite : &quot;Je comprends votre hesitation. Ce produit est tres
-                  populaire et nous avons un stock limite. La livraison est rapide et vous ne payez
-                  qu&apos;a la reception.&quot;
+                  Si le client hésite : &quot;Je comprends votre hésitation. Ce produit est très
+                  populaire et nous avons un stock limité. La livraison est rapide et vous ne payez
+                  qu&apos;à la réception.&quot;
                 </p>
               </div>
 
               <div className="border rounded-lg p-4 bg-emerald-50/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-emerald-600">Etape 5</Badge>
-                  <span className="font-medium text-sm">Cloture</span>
+                  <Badge className="bg-emerald-600">Étape5</Badge>
+                  <span className="font-medium text-sm">Clôture</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  &quot;Parfait, votre commande est confirmee. Vous recevrez votre colis sous 24 a
-                  48h. Merci pour votre confiance et bonne journee !&quot;
+                  &quot;Parfait, votre commande est confirmée. Vous recevrez votre colis sous 24 à
+                  48h. Merci pour votre confiance et bonne journée !&quot;
                 </p>
               </div>
             </div>

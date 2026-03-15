@@ -30,7 +30,7 @@ export function Pagination({ page, totalPages, onPageChange, totalItems }: Pagin
     <div className="flex items-center justify-between mt-4">
       {totalItems !== undefined && (
         <span className="text-sm text-muted-foreground">
-          {totalItems} element{totalItems > 1 ? 's' : ''}
+          {totalItems} élément{totalItems > 1 ? 's' : ''}
         </span>
       )}
       <div className="flex items-center gap-1 ml-auto">

@@ -31,7 +31,7 @@ export default function AdminCommissionsPage() {
     setFeedback(null);
     try {
       await updateCommissionStatut(id, 'approuvee');
-      setFeedback({ type: 'success', message: 'Commission approuvee.' });
+      setFeedback({ type: 'success', message: 'Commission approuvée.' });
       refetch();
     } catch (err) {
       setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
@@ -45,7 +45,7 @@ export default function AdminCommissionsPage() {
     setFeedback(null);
     try {
       await updateCommissionStatut(id, 'payee');
-      toast.success('Commission marquee comme payee.');
+      toast.success('Commission marquée comme payée.');
       refetch();
     } catch (err) {
       toast.error(`Erreur: ${err instanceof Error ? err.message : 'Inconnue'}`);
@@ -59,7 +59,7 @@ export default function AdminCommissionsPage() {
     setFeedback(null);
     try {
       await updateCommissionStatut(id, 'rejetee');
-      toast.success('Commission rejetee.');
+      toast.success('Commission rejetée.');
       refetch();
     } catch (err) {
       toast.error(`Erreur: ${err instanceof Error ? err.message : 'Inconnue'}`);
@@ -127,7 +127,7 @@ export default function AdminCommissionsPage() {
               {commissions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Aucune commission enregistree.
+                    Aucune commission enregistrée.
                   </TableCell>
                 </TableRow>
               ) : (

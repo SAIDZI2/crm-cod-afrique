@@ -68,7 +68,7 @@ export default function AdminProduitsPage() {
           await updateProduit(newProduit.id, { image_url: imageUrl } as Record<string, unknown>);
         } catch { /* image upload is optional, don't block creation */ }
       }
-      toast.success('Produit cree!');
+      toast.success('Produit créé !');
       resetForm();
       setShowCreate(false);
       refetch();
@@ -92,7 +92,7 @@ export default function AdminProduitsPage() {
         stock: parseInt(editForm.stock) || 0,
         description: editForm.description || undefined,
       } as Record<string, unknown>);
-      toast.success('Produit modifie!');
+      toast.success('Produit modifié !');
       setShowEdit(false);
       setEditForm(null);
       refetch();
@@ -106,7 +106,7 @@ export default function AdminProduitsPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteProduit(id);
-      toast.success('Produit desactive.');
+      toast.success('Produit désactivé.');
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Inconnue'));
@@ -141,7 +141,7 @@ export default function AdminProduitsPage() {
           <DialogTrigger render={<Button><Plus className="w-4 h-4 mr-2" />Nouveau produit</Button>} />
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Creer un produit</DialogTitle>
+              <DialogTitle>Créer un produit</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div>
@@ -154,7 +154,7 @@ export default function AdminProduitsPage() {
                   <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="mt-1" placeholder="SKU-001" />
                 </div>
                 <div>
-                  <Label>Categorie</Label>
+                  <Label>Catégorie</Label>
                   <Select value={form.categorie} onValueChange={(v) => v && setForm({ ...form, categorie: v })}>
                     <SelectTrigger className="mt-1"><SelectValue placeholder="Choisir" /></SelectTrigger>
                     <SelectContent>
@@ -192,7 +192,7 @@ export default function AdminProduitsPage() {
               </div>
               <Button className="w-full" onClick={handleCreate} disabled={formLoading}>
                 {formLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                Creer
+                Créer
               </Button>
             </div>
           </DialogContent>
@@ -207,7 +207,7 @@ export default function AdminProduitsPage() {
                 <TableHead>Image</TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Categorie</TableHead>
+                <TableHead>Catégorie</TableHead>
                 <TableHead>Prix</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Actif</TableHead>
@@ -274,7 +274,7 @@ export default function AdminProduitsPage() {
                   <Input value={editForm.sku} onChange={(e) => setEditForm({ ...editForm, sku: e.target.value })} className="mt-1" />
                 </div>
                 <div>
-                  <Label>Categorie</Label>
+                  <Label>Catégorie</Label>
                   <Select value={editForm.categorie} onValueChange={(v) => v && setEditForm({ ...editForm, categorie: v })}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
