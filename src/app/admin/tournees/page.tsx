@@ -66,6 +66,7 @@ export default function AdminTourneesPage() {
       const tournee = await createTournee({
         livreur_id: selectedLivreur,
         date: selectedDate,
+        statut: 'en_cours',
       });
 
       for (let i = 0; i < selectedCommandes.length; i++) {

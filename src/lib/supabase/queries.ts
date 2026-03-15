@@ -536,10 +536,10 @@ export async function createTournee(tournee: { livreur_id: string; date: string;
   return data as Tournee;
 }
 
-export async function createTourneeCommande(tc: { tournee_id: string; commande_id: string; ordre: number }) {
+export async function createTourneeCommande(tc: { tournee_id: string; commande_id: string; ordre: number; statut_livraison?: string }) {
   const { data, error } = await supabase
     .from('tournee_commandes')
-    .insert(tc)
+    .insert({ ...tc, statut_livraison: tc.statut_livraison ?? 'en_cours' })
     .select()
     .single();
   if (error) throw error;
