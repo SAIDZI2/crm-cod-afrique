@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
+import { Header } from '@/components/header';
 import { useAuth, getRoleBasePath, isRoleAllowedForPath } from '@/hooks/use-auth';
 import { LoadingPage } from '@/hooks/use-supabase';
 
@@ -29,9 +30,17 @@ export default function CallCentreLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar title="Call Centre" titleColor="text-blue-400" items={sidebarItems} />
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+    <div className="flex min-h-screen">
+      <Sidebar
+        title="Call Centre"
+        titleColor="text-blue-600"
+        accentColor="bg-blue-500"
+        items={sidebarItems}
+      />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header />
+        <main className="flex-1 p-6 overflow-auto bg-[#f5f6fa]">{children}</main>
+      </div>
     </div>
   );
 }
