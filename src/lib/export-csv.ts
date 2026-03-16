@@ -10,7 +10,8 @@ interface CsvColumn<T> {
   format?: (row: T) => string;
 }
 
-export function exportCsv<T extends Record<string, unknown>>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportCsv<T extends Record<string, any>>(
   data: T[],
   columns: CsvColumn<T>[],
   filename: string = 'export.csv'

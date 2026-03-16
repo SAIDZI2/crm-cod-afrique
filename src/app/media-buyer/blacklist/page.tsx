@@ -154,6 +154,7 @@ export default function BlacklistPage() {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleRemove(entry.id)}
+                      aria-label="Supprimer de la blacklist"
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>

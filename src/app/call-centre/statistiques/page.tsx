@@ -13,6 +13,7 @@ import {
 import { BarChart } from '@/components/charts/bar-chart';
 import { LineChart } from '@/components/charts/line-chart';
 import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getCommandes, getAppels, getUsersByRole } from '@/lib/supabase/queries';
@@ -21,11 +22,12 @@ export default function StatistiquesPage() {
   const { user } = useAuth();
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
-  const { data: commandesData, loading: l1 } = useSupabase(() => getCommandes(), []);
+  const { data: commandesData, loading: l1, error } = useSupabase(() => getCommandes(), []);
   const { data: appelsData, loading: l2 } = useSupabase(() => getAppels(), []);
   const { data: usersData, loading: l3 } = useSupabase(() => getUsersByRole('call_center'), []);
 
   if (l1 || l2 || l3) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} />;
   const allCommandes = commandesData ?? [];
   const allAppels = appelsData ?? [];
   const agents = usersData ?? [];
@@ -61,7 +63,7 @@ export default function StatistiquesPage() {
     const meilleureHeure = bestHourEntry ? `${bestHourEntry[0]}h00` : '-';
 
     const upsells = agentCommandes.reduce((acc, c) => {
-      const cpCount = (c as unknown as { commande_produits?: { type?: string }[] }).commande_produits?.filter(
+      const cpCount = c.commande_produits?.filter(
         (cp) => cp.type === 'upsell'
       ).length ?? 0;
       return acc + cpCount;

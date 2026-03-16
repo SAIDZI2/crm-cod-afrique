@@ -72,7 +72,7 @@ export default function CommandesPage() {
             size="sm"
             onClick={() =>
               exportCsv(
-                filtered as unknown as Record<string, unknown>[],
+                filtered,
                 [
                   { key: 'id', header: 'ID' },
                   { key: 'statut', header: 'Statut' },
@@ -155,7 +155,7 @@ export default function CommandesPage() {
                 </TableCell>
                 <TableCell className="text-sm">{formatDate(commande.created_at)}</TableCell>
                 <TableCell className="text-sm">
-                  {(commande as unknown as { commande_produits?: { produit?: { nom: string } }[] }).commande_produits?.[0]?.produit?.nom ?? commande.source ?? '-'}
+                  {commande.commande_produits?.[0]?.produit?.nom ?? commande.source ?? '-'}
                 </TableCell>
                 <TableCell className="font-semibold">
                   {formatCurrency(commande.montant_total)}

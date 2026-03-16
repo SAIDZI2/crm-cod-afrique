@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getCommandes, getRappels, getAppels } from '@/lib/supabase/queries';
@@ -23,7 +24,7 @@ import { Phone } from 'lucide-react';
 
 export default function CallCentreDashboard() {
   const { user } = useAuth();
-  const { data: commandesData, loading: loadingCommandes } = useSupabase(() => getCommandes(), []);
+  const { data: commandesData, loading: loadingCommandes, error: errCommandes } = useSupabase(() => getCommandes(), []);
   const { data: rappelsData, loading: loadingRappels } = useSupabase(
     () => user ? getRappels(user.id) : Promise.resolve([]), [user?.id]
   );
@@ -32,6 +33,9 @@ export default function CallCentreDashboard() {
   );
 
   if (loadingCommandes || loadingRappels || loadingAppels) return <LoadingPage />;
+
+  const error = errCommandes;
+  if (error) return <ErrorDisplay error={error} />;
 
   const allCommandes = commandesData ?? [];
   const rappels = rappelsData ?? [];
@@ -46,7 +50,7 @@ export default function CallCentreDashboard() {
     const nouveau = allCommandes.filter((c) => c.statut === 'nouveau').length;
     const rappelsAujourdhui = rappels.filter((r) => r.statut === 'en_attente').length;
     // Filter by current agent for personal stats - today only
-    const myCommandes = user ? commandesAuj.filter((c) => (c as unknown as { agent_id?: string }).agent_id === user.id) : commandesAuj;
+    const myCommandes = user ? commandesAuj.filter((c) => c.agent_id === user.id) : commandesAuj;
     const confirme = myCommandes.filter((c) => c.statut === 'confirme').length;
     const echoue = myCommandes.filter((c) => c.statut === 'echoue').length;
     const reporte = myCommandes.filter((c) => c.statut === 'reporte').length;

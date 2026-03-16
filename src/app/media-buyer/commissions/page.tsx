@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { KpiCard } from '@/components/kpi-card';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getSubAffiliates, getCommandesByUserIds, getCommissionsByUserIds } from '@/lib/supabase/queries';
@@ -18,7 +19,7 @@ import { formatCurrency } from '@/lib/constants';
 
 export default function CommissionsPage() {
   const { user } = useAuth();
-  const { data: sousAffiliesData, loading: l1 } = useSupabase(
+  const { data: sousAffiliesData, loading: l1, error } = useSupabase(
     () => (user ? getSubAffiliates(user.id) : Promise.resolve([])),
     [user?.id]
   );
@@ -37,6 +38,7 @@ export default function CommissionsPage() {
   );
 
   if (l1 || l2 || l3) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} />;
   const sousAffilies = sousAffiliesData ?? [];
   const commandes = commandesData ?? [];
   const commissions = commissionsData ?? [];

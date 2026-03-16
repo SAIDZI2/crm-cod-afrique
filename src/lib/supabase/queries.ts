@@ -2,8 +2,8 @@ import { createClient } from './client';
 import type {
   User, Produit, Commande, CommandeProduit, Blacklist,
   Depense, Commission, Appel, Rappel, Tournee,
-  TourneeCommande, RemiseCash, Retour, StatutCommande,
-  StatutCommission
+  TourneeCommande, RemiseCash, Retour, Paiement,
+  StatutCommande, StatutCommission
 } from '../types';
 
 const supabase = createClient();
@@ -17,7 +17,7 @@ export async function getUsers() {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as User[];
+  return (data ?? []) as User[];
 }
 
 export async function getUsersByRole(role: string) {
@@ -27,7 +27,7 @@ export async function getUsersByRole(role: string) {
     .eq('role', role)
     .order('nom');
   if (error) throw error;
-  return data as User[];
+  return (data ?? []) as User[];
 }
 
 export async function getUserById(id: string) {
@@ -47,7 +47,7 @@ export async function getSubAffiliates(parentId: string) {
     .eq('parent_id', parentId)
     .order('nom');
   if (error) throw error;
-  return data as User[];
+  return (data ?? []) as User[];
 }
 
 // ============================================
@@ -59,7 +59,7 @@ export async function getProduits() {
     .select('*')
     .order('nom');
   if (error) throw error;
-  return data as Produit[];
+  return (data ?? []) as Produit[];
 }
 
 export async function getProduitById(id: string) {
@@ -93,7 +93,7 @@ export async function updateProduit(id: string, updates: Partial<Produit>) {
 export async function deleteProduit(id: string) {
   const { error } = await supabase
     .from('produits')
-    .update({ actif: false } as Record<string, unknown>)
+    .update({ actif: false })
     .eq('id', id);
   if (error) throw error;
 }
@@ -115,21 +115,24 @@ export async function getCommandes(filters?: {
   if (filters?.userId) query = query.eq('user_id', filters.userId);
   if (filters?.statut) query = query.eq('statut', filters.statut);
   if (filters?.ville) query = query.eq('ville', filters.ville);
-  if (filters?.search) query = query.or(`destinataire_nom.ilike.%${filters.search}%,telephone.ilike.%${filters.search}%,id.ilike.%${filters.search}%`);
+  if (filters?.search) {
+    const s = filters.search.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    query = query.or(`destinataire_nom.ilike.%${s}%,telephone.ilike.%${s}%,id.ilike.%${s}%`);
+  }
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as (Commande & { commande_produits: (CommandeProduit & { produit: Produit })[] })[];
+  return (data ?? []) as (Commande & { user?: User; commande_produits: (CommandeProduit & { produit: Produit })[] })[];
 }
 
 export async function getCommandeById(id: string) {
   const { data, error } = await supabase
     .from('commandes')
-    .select('*, user:users!commandes_user_id_fkey(*), agent:users!commandes_agent_id_fkey(*), livreur:users!commandes_livreur_id_fkey(*), commande_produits(*, produit:produits(*)), appels(*)')
+    .select('*, user:users!commandes_user_id_fkey(*), agent:users!commandes_agent_id_fkey(*), livreur:users!commandes_livreur_id_fkey(*), commande_produits(*, produit:produits(*)), appels(*), retours(*)')
     .eq('id', id)
     .single();
   if (error) throw error;
-  return data as Commande & { user?: User; agent?: User; livreur?: User; commande_produits: (CommandeProduit & { produit: Produit })[]; appels: Appel[] };
+  return data as Commande & { user?: User; agent?: User; livreur?: User; commande_produits: (CommandeProduit & { produit: Produit })[]; appels: Appel[]; retours: Retour[] };
 }
 
 export async function getCommandesByUserIds(userIds: string[]) {
@@ -161,7 +164,7 @@ export async function getCommandesByTelephone(telephone: string) {
     .eq('telephone', telephone)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as Commande[];
+  return (data ?? []) as Commande[];
 }
 
 export async function getCommandesByStatut(statut: StatutCommande) {
@@ -245,7 +248,7 @@ export async function getBlacklist() {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as Blacklist[];
+  return (data ?? []) as Blacklist[];
 }
 
 export async function addToBlacklist(entry: Partial<Blacklist>) {
@@ -312,7 +315,7 @@ export async function getCommissions(userId?: string) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as (Commission & { commande: Commande; user: User })[];
+  return (data ?? []) as (Commission & { commande: Commande; user: User })[];
 }
 
 export async function createCommission(commission: Partial<Commission>) {
@@ -337,7 +340,7 @@ export async function getAppels(agentId?: string) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as (Appel & { commande: Commande })[];
+  return (data ?? []) as (Appel & { commande: Commande })[];
 }
 
 export async function createAppel(appel: Partial<Appel>) {
@@ -362,7 +365,7 @@ export async function getRappels(agentId?: string) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as (Rappel & { commande: Commande })[];
+  return (data ?? []) as (Rappel & { commande: Commande })[];
 }
 
 export async function createRappel(rappel: Partial<Rappel>) {
@@ -395,7 +398,7 @@ export async function getTournees(livreurId?: string) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as Tournee[];
+  return (data ?? []) as Tournee[];
 }
 
 export async function getTourneeEnCours(livreurId: string) {
@@ -588,20 +591,20 @@ export async function getPaiements(userId?: string) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as import('../types').Paiement[];
+  return (data ?? []) as Paiement[];
 }
 
-export async function createPaiement(paiement: Partial<import('../types').Paiement>) {
+export async function createPaiement(paiement: Partial<Paiement>) {
   const { data, error } = await supabase
     .from('paiements')
     .insert(paiement)
     .select()
     .single();
   if (error) throw error;
-  return data as import('../types').Paiement;
+  return data as Paiement;
 }
 
-export async function updatePaiement(id: string, updates: Partial<import('../types').Paiement>) {
+export async function updatePaiement(id: string, updates: Partial<Paiement>) {
   const { error } = await supabase
     .from('paiements')
     .update(updates)
@@ -615,7 +618,7 @@ export async function getAllPaiements() {
     .select('*, user:users!paiements_user_id_fkey(*)')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as (import('../types').Paiement & { user: import('../types').User })[];
+  return (data ?? []) as (Paiement & { user: User })[];
 }
 
 // ============================================

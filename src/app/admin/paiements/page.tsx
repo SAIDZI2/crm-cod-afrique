@@ -38,10 +38,10 @@ export default function AdminPaiementsPage() {
   const paiements = filterByDateRange(allPaiements, 'created_at', dateDebut, dateFin).filter((p) => {
     const matchStatut = statutFilter === 'tous' || p.statut === statutFilter;
     const s = debouncedSearch.toLowerCase();
-    const pAny = p as any;
+    const pTyped = p as (typeof p & { user?: { nom?: string; email?: string } });
     const matchSearch = !s ||
-      pAny.user?.nom?.toLowerCase().includes(s) ||
-      pAny.user?.email?.toLowerCase().includes(s) ||
+      pTyped.user?.nom?.toLowerCase().includes(s) ||
+      pTyped.user?.email?.toLowerCase().includes(s) ||
       p.reference?.toLowerCase().includes(s) ||
       p.methode?.toLowerCase().includes(s);
     return matchStatut && matchSearch;
@@ -138,8 +138,8 @@ export default function AdminPaiementsPage() {
                     <TableRow key={p.id}>
                       <TableCell className="text-sm">{formatDate(p.created_at)}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{(p as unknown as { user?: { nom: string } }).user?.nom ?? '-'}</div>
-                        <div className="text-xs text-muted-foreground">{(p as unknown as { user?: { email: string } }).user?.email ?? ''}</div>
+                        <div className="font-medium">{(p as (typeof p & { user?: { nom: string } })).user?.nom ?? '-'}</div>
+                        <div className="text-xs text-muted-foreground">{(p as (typeof p & { user?: { email: string } })).user?.email ?? ''}</div>
                       </TableCell>
                       <TableCell className="font-semibold">{formatCurrency(p.montant)}</TableCell>
                       <TableCell className="text-sm capitalize">{p.methode?.replace('_', ' ') ?? '-'}</TableCell>

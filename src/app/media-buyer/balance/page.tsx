@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { KpiCard } from '@/components/kpi-card';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getCommissions, getCommandes, getPaiements, createPaiement } from '@/lib/supabase/queries';
@@ -48,7 +49,7 @@ const methodeOptions = [
 
 export default function BalancePage() {
   const { user } = useAuth();
-  const { data: commissionsData, loading: l1 } = useSupabase(() => (user ? getCommissions(user.id) : Promise.resolve([])), [user?.id]);
+  const { data: commissionsData, loading: l1, error } = useSupabase(() => (user ? getCommissions(user.id) : Promise.resolve([])), [user?.id]);
   const { data: commandesData, loading: l2 } = useSupabase(() => (user ? getCommandes({ userId: user.id }) : Promise.resolve([])), [user?.id]);
   const { data: paiementsData, loading: l3, refetch: refetchPaiements } = useSupabase(
     () => (user ? getPaiements(user.id) : Promise.resolve([])),
@@ -64,6 +65,7 @@ export default function BalancePage() {
   const [dateFin, setDateFin] = useState('');
 
   if (l1 || l2 || l3) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} />;
   const commissions = commissionsData ?? [];
   const commandes = commandesData ?? [];
   const paiements = paiementsData ?? [];

@@ -78,7 +78,7 @@ export default function AdminCommandesPage() {
           size="sm"
           onClick={() =>
             exportCsv(
-              filtered as unknown as Record<string, unknown>[],
+              filtered,
               [
                 { key: 'id', header: 'ID' },
                 { key: 'statut', header: 'Statut' },
@@ -87,7 +87,7 @@ export default function AdminCommandesPage() {
                 { key: 'telephone', header: 'Téléphone' },
                 { key: 'ville', header: 'Ville' },
                 { key: 'montant_total', header: 'Montant', format: (r) => String(r.montant_total) },
-                { key: '', header: 'Media Buyer', format: (r) => (r as unknown as { user?: { nom: string } }).user?.nom ?? '' },
+                { key: '', header: 'Media Buyer', format: (r) => r.user?.nom ?? '' },
               ],
               'admin-commandes.csv'
             )
@@ -157,7 +157,7 @@ export default function AdminCommandesPage() {
                   <TableCell className="text-sm">{commande.ville}</TableCell>
                   <TableCell className="font-semibold">{formatCurrency(commande.montant_total)}</TableCell>
                   <TableCell className="text-sm">
-                    {(commande as unknown as { user?: { nom: string } }).user?.nom ?? '-'}
+                    {commande.user?.nom ?? '-'}
                   </TableCell>
                   <TableCell>
                     <Link href={`/admin/commande/${commande.id}`}>

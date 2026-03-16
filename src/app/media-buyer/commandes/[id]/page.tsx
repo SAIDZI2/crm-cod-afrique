@@ -191,18 +191,18 @@ export default function CommandeDetailPage() {
             </div>
             <div>
               <span className="text-muted-foreground">Créée par</span>
-              <p className="font-medium">{(commande as unknown as { user?: { nom: string } }).user?.nom ?? commande.user_id}</p>
+              <p className="font-medium">{commande.user?.nom ?? commande.user_id}</p>
             </div>
             {commande.agent_id && (
               <div>
                 <span className="text-muted-foreground">Agent</span>
-                <p className="font-medium">{(commande as unknown as { agent?: { nom: string } }).agent?.nom ?? commande.agent_id}</p>
+                <p className="font-medium">{commande.agent?.nom ?? commande.agent_id}</p>
               </div>
             )}
             {commande.livreur_id && (
               <div>
                 <span className="text-muted-foreground">Livreur</span>
-                <p className="font-medium">{(commande as unknown as { livreur?: { nom: string } }).livreur?.nom ?? commande.livreur_id}</p>
+                <p className="font-medium">{commande.livreur?.nom ?? commande.livreur_id}</p>
               </div>
             )}
           </div>

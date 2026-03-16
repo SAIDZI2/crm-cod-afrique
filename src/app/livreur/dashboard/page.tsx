@@ -4,6 +4,7 @@
 
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getTourneeEnCours, getTourneeCommandes } from '@/lib/supabase/queries';
@@ -12,7 +13,7 @@ import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function LivreurDashboardPage() {
   const { user } = useAuth();
-  const { data: tourneeActuelle, loading: loadingTournee } = useSupabase(
+  const { data: tourneeActuelle, loading: loadingTournee, error } = useSupabase(
     () => (user ? getTourneeEnCours(user.id) : Promise.resolve(null)),
     [user?.id]
   );
@@ -25,6 +26,7 @@ export default function LivreurDashboardPage() {
   );
 
   if (loadingTournee || loadingCommandes) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} />;
 
   const commandes = rawCommandes ?? [];
 

@@ -266,11 +266,11 @@ export default function AdminProduitsPage() {
                     <Badge variant={p.actif ? 'default' : 'destructive'}>{p.actif ? 'Actif' : 'Inactif'}</Badge>
                   </TableCell>
                   <TableCell className="space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(p)} aria-label="Modifier le produit">
                       <Pencil className="w-3 h-3" />
                     </Button>
                     {p.actif && (
-                      <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)}>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)} aria-label="Supprimer le produit">
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     )}

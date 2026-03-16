@@ -14,17 +14,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { getCommandeById, getCommandesByTelephone } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants';
-import { ArrowLeft, AlertTriangle, Phone, Package, MapPin, User, Calendar } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Phone, Package, MapPin, User } from 'lucide-react';
 
 export default function AdminCommandeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const commandeId = params.id as string;
 
-  const { data: commande, loading: l1 } = useSupabase(
+  const { data: commande, loading: l1, error } = useSupabase(
     () => getCommandeById(commandeId),
     [commandeId]
   );
@@ -34,6 +35,7 @@ export default function AdminCommandeDetailPage() {
   );
 
   if (l1 || l2) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} />;
 
   if (!commande) {
     return (
@@ -51,9 +53,9 @@ export default function AdminCommandeDetailPage() {
 
   const otherOrders = (clientHistory ?? []).filter((c) => c.id !== commande.id);
 
-  const retours = (commande as unknown as { retours?: { id: string; motif: string; note?: string; date_retour: string; recu_au_depot: boolean }[] }).retours ?? [];
+  const retours = commande.retours ?? [];
   const appels = commande.appels ?? [];
-  const mediaBuyer = (commande as unknown as { user?: { nom: string; email: string } }).user;
+  const mediaBuyer = commande.user;
 
   return (
     <div className="space-y-6">

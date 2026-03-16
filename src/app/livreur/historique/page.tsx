@@ -5,6 +5,7 @@ import { KpiCard } from '@/components/kpi-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ErrorDisplay } from '@/components/error-display';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getTournees, getAllTourneeCommandes } from '@/lib/supabase/queries';
@@ -20,7 +21,7 @@ const STATUT_TOURNEE_CONFIG: Record<string, { label: string; bg: string; text: s
 
 export default function LivreurHistoriquePage() {
   const { user } = useAuth();
-  const { data: tourneesData, loading: l1 } = useSupabase(
+  const { data: tourneesData, loading: l1, error } = useSupabase(
     () => (user ? getTournees(user.id) : Promise.resolve([])),
     [user?.id]
   );
@@ -33,6 +34,7 @@ export default function LivreurHistoriquePage() {
   const [dateFin, setDateFin] = useState('');
 
   if (l1 || l2) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} />;
   const tournees = tourneesData ?? [];
   const allTc = tcData ?? [];
 

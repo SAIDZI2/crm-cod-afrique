@@ -103,11 +103,11 @@ export default function AdminCommissionsPage() {
           size="sm"
           onClick={() =>
             exportCsv(
-              commissions as unknown as Record<string, unknown>[],
+              commissions,
               [
                 { key: 'id', header: 'ID' },
                 { key: 'commande_id', header: 'Commande' },
-                { key: '', header: 'Media Buyer', format: (r) => (r as unknown as { user?: { nom: string } }).user?.nom ?? '' },
+                { key: '', header: 'Media Buyer', format: (r) => r.user?.nom ?? '' },
                 { key: 'montant', header: 'Montant', format: (r) => String(r.montant) },
                 { key: 'statut', header: 'Statut' },
               ],

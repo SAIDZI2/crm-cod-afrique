@@ -31,10 +31,12 @@ import { getCommandes, getRappels, getProduits } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 import { VILLES_RDC } from '@/lib/constants';
 import { Phone, FileText } from 'lucide-react';
-import type { Commande } from '@/lib/types';
+import type { Commande, CommandeProduit, Produit, User } from '@/lib/types';
+
+type CommandeWithJoins = Commande & { user?: User; commande_produits: (CommandeProduit & { produit: Produit })[] };
 
 interface QueueItem {
-  commande: Commande;
+  commande: CommandeWithJoins;
   priority: number;
   priorityLabel: string;
   priorityColor: string;
@@ -118,7 +120,7 @@ export default function FileAppelsPage() {
       if (!c.destinataire_nom.toLowerCase().includes(s) && !c.telephone.includes(s) && !c.id.toLowerCase().includes(s)) return false;
     }
     if (productFilter !== 'tous') {
-      const hasProduct = (c as unknown as { commande_produits?: { produit_id: string }[] }).commande_produits?.some((cp) => cp.produit_id === productFilter);
+      const hasProduct = c.commande_produits?.some((cp) => cp.produit_id === productFilter);
       if (!hasProduct) return false;
     }
     if (cityFilter !== 'tous' && c.ville !== cityFilter) return false;

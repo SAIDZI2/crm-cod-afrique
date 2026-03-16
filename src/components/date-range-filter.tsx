@@ -126,7 +126,7 @@ export function filterByDateRange<T>(
   dateFin: string
 ): T[] {
   return items.filter((item) => {
-    const dateValue = item[dateField] as unknown as string;
+    const dateValue = String(item[dateField] ?? '');
     if (!dateValue) return true;
     if (dateDebut && dateValue < dateDebut) return false;
     if (dateFin && dateValue > dateFin + 'T23:59:59Z') return false;
