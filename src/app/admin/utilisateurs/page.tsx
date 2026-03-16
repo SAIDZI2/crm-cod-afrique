@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Pagination } from '@/components/pagination';
 import { usePagination } from '@/hooks/use-pagination';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { ErrorDisplay } from '@/components/error-display';
 import { getUsers, createUser, updateUser } from '@/lib/supabase/queries';
 import { toast } from 'sonner';
 import { Loader2, UserPlus, Pencil } from 'lucide-react';
@@ -35,7 +37,9 @@ const roleOptions = [
 ];
 
 export default function AdminUsersPage() {
-  const { data: usersData, loading, refetch } = useSupabase(() => getUsers(), []);
+  const { data: usersData, loading, error, refetch } = useSupabase(() => getUsers(), []);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [showDialog, setShowDialog] = useState(false);
   const [editDialog, setEditDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<{ id: string; nom: string; role: string; commission_pct: number } | null>(null);
@@ -62,6 +66,8 @@ export default function AdminUsersPage() {
 
   const handleEditUser = async () => {
     if (!editingUser) return;
+    if (!editingUser.nom.trim()) { toast.error('Le nom est requis.'); return; }
+    if (editingUser.commission_pct < 0 || editingUser.commission_pct > 100) { toast.error('Commission doit être entre 0 et 100%.'); return; }
     setFormLoading(true);
     try {
       await updateUser(editingUser.id, {
@@ -93,7 +99,13 @@ export default function AdminUsersPage() {
   };
 
   const handleCreateUser = async () => {
-    if (!nom || !email || !role) return;
+    if (!nom.trim()) { toast.error('Le nom est requis.'); return; }
+    if (!email.trim()) { toast.error('L\'email est requis.'); return; }
+    // Simple email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Format d\'email invalide.'); return; }
+    if (!role) { toast.error('Le rôle est requis.'); return; }
+    const pct = Number(commissionPct);
+    if (isNaN(pct) || pct < 0 || pct > 100) { toast.error('La commission doit être entre 0 et 100%.'); return; }
     setFormLoading(true);
     setFeedback(null);
     try {
@@ -115,9 +127,14 @@ export default function AdminUsersPage() {
   };
 
   const users = usersData ?? [];
-  const { page, setPage, totalPages, paginatedItems } = usePagination(users, 15);
+  const filtered = users.filter((u) => {
+    const s = debouncedSearch.toLowerCase();
+    return !s || u.nom.toLowerCase().includes(s) || u.email.toLowerCase().includes(s) || u.role.toLowerCase().includes(s);
+  });
+  const { page, setPage, totalPages, paginatedItems } = usePagination(filtered, 15);
 
   if (loading) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} onRetry={refetch} />;
   const actifs = users.filter((u) => u.actif).length;
 
   return (
@@ -209,6 +226,13 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      <Input
+        placeholder="Rechercher un utilisateur (nom, email, rôle)..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="max-w-sm"
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>{users.length} comptes · {actifs} actifs</CardTitle>
@@ -265,7 +289,7 @@ export default function AdminUsersPage() {
               ))}
             </TableBody>
           </Table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={users.length} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} />
         </CardContent>
       </Card>
 

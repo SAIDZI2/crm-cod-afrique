@@ -51,8 +51,24 @@ export default function NouvelleCommandePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.destinataire_nom || !form.telephone || !form.ville || !form.produit_id) {
-      toast.error('Veuillez remplir tous les champs obligatoires.');
+    if (!form.destinataire_nom.trim()) {
+      toast.error('Le nom du destinataire est requis.');
+      return;
+    }
+    if (!form.telephone.trim()) {
+      toast.error('Le numéro de téléphone est requis.');
+      return;
+    }
+    if (form.telephone.replace(/\D/g, '').length < 8) {
+      toast.error('Le numéro de téléphone doit contenir au moins 8 chiffres.');
+      return;
+    }
+    if (!form.ville) {
+      toast.error('La ville est requise.');
+      return;
+    }
+    if (!form.produit_id) {
+      toast.error('Veuillez sélectionner un produit.');
       return;
     }
     if (!user) return;
@@ -185,7 +201,7 @@ export default function NouvelleCommandePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="remise">Remise ($)</Label>
+                <Label htmlFor="remise">Remise (DH)</Label>
                 <Input
                   id="remise"
                   type="number"

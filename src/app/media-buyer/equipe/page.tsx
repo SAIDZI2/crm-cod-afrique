@@ -10,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getSubAffiliates, getCommandes, updateUser } from '@/lib/supabase/queries';
@@ -36,6 +38,7 @@ export default function EquipePage() {
 
   if (l1 || l2) return <LoadingPage />;
   const members = membersData ?? [];
+  const { page, setPage, totalPages, paginatedItems } = usePagination(members, 15);
   const commandes = commandesData ?? [];
 
   const memberStats: Record<string, number> = {};
@@ -57,6 +60,7 @@ export default function EquipePage() {
           <CardTitle>Sous-affiliés</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -69,7 +73,7 @@ export default function EquipePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members.map((member) => (
+              {paginatedItems.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell className="text-sm">
                     {formatDate(member.created_at)}
@@ -104,11 +108,13 @@ export default function EquipePage() {
               ))}
             </TableBody>
           </Table>
+          </div>
           {members.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               Aucun membre dans votre équipe.
             </div>
           )}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={members.length} />
         </CardContent>
       </Card>
     </div>

@@ -145,7 +145,7 @@ export default function BalancePage() {
                 <span className="font-bold text-green-800">{formatCurrency(disponible)}</span>
               </div>
               <div>
-                <Label htmlFor="retrait-montant" className="text-sm font-medium">Montant ($)</Label>
+                <Label htmlFor="retrait-montant" className="text-sm font-medium">Montant (DH)</Label>
                 <Input
                   id="retrait-montant"
                   type="number"
@@ -256,7 +256,7 @@ export default function BalancePage() {
                       ? formatCurrency(
                           commissions.reduce((s, c) => s + c.montant, 0) / commissions.length
                         )
-                      : '$0.00'}
+                      : '0,00 DH'}
                   </p>
                 </div>
                 <div>
@@ -274,7 +274,7 @@ export default function BalancePage() {
             <CardHeader>
               <CardTitle>Commissions</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -323,7 +323,7 @@ export default function BalancePage() {
             <CardHeader>
               <CardTitle>Historique des Retraits</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

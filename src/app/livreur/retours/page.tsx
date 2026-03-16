@@ -6,6 +6,8 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow
 } from '@/components/ui/table';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getRetours, updateRetour } from '@/lib/supabase/queries';
@@ -43,6 +45,7 @@ export default function LivreurRetoursPage() {
 
   if (loading) return <LoadingPage />;
   const retours = retoursData ?? [];
+  const { page, setPage, totalPages, paginatedItems } = usePagination(retours, 15);
 
   const motifStats: Record<string, number> = {};
   retours.forEach(r => {
@@ -116,7 +119,7 @@ export default function LivreurRetoursPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  retours.map(retour => {
+                  paginatedItems.map(retour => {
                     const cmd = retour.commande;
                     if (!cmd) return null;
                     const motif = retour.motif ?? 'autre';
@@ -159,6 +162,7 @@ export default function LivreurRetoursPage() {
                 )}
               </TableBody>
             </Table>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={retours.length} />
           </div>
         </CardContent>
       </Card>

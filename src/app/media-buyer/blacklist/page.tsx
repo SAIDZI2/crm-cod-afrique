@@ -20,7 +20,7 @@ import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getBlacklist, addToBlacklist, removeFromBlacklist } from '@/lib/supabase/queries';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 
 export default function BlacklistPage() {
   const { user } = useAuth();
@@ -28,6 +28,7 @@ export default function BlacklistPage() {
   const [search, setSearch] = useState('');
   const [newTelephone, setNewTelephone] = useState('');
   const [newMotif, setNewMotif] = useState('');
+  const [addLoading, setAddLoading] = useState(false);
 
   const blacklist = blacklistData ?? [];
 
@@ -43,13 +44,24 @@ export default function BlacklistPage() {
 
   async function handleAdd() {
     if (!user) return;
-    if (!newTelephone.trim()) {
+    const phone = newTelephone.trim();
+    if (!phone) {
       toast.error('Veuillez entrer un numéro de téléphone.');
       return;
     }
+    if (phone.length < 8) {
+      toast.error('Le numéro de téléphone doit contenir au moins 8 chiffres.');
+      return;
+    }
+    // Check duplicate
+    if (blacklist.some(b => b.telephone === phone)) {
+      toast.error('Ce numéro est déjà dans la blacklist.');
+      return;
+    }
+    setAddLoading(true);
     try {
       await addToBlacklist({
-        telephone: newTelephone.trim(),
+        telephone: phone,
         motif: newMotif.trim() || undefined,
         user_id: user.id,
       });
@@ -59,6 +71,8 @@ export default function BlacklistPage() {
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    } finally {
+      setAddLoading(false);
     }
   }
 
@@ -102,7 +116,7 @@ export default function BlacklistPage() {
                 placeholder="Raison du blocage"
               />
             </div>
-            <Button onClick={handleAdd}>Ajouter</Button>
+            <Button onClick={handleAdd} disabled={addLoading}>{addLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Ajouter</Button>
           </div>
         </CardContent>
       </Card>

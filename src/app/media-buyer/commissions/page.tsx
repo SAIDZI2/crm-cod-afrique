@@ -104,7 +104,7 @@ export default function CommissionsPage() {
         <CardHeader>
           <CardTitle>Sous-affiliés et leurs Commissions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

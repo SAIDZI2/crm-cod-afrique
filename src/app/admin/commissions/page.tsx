@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/pagination';
 import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { ErrorDisplay } from '@/components/error-display';
 import { getCommissions, updateCommissionStatut } from '@/lib/supabase/queries';
 import { formatCurrency } from '@/lib/constants';
 import { exportCsv } from '@/lib/export-csv';
@@ -26,9 +27,8 @@ const statutColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export default function AdminCommissionsPage() {
-  const { data: commissionsData, loading, refetch } = useSupabase(() => getCommissions(), []);
+  const { data: commissionsData, loading, error, refetch } = useSupabase(() => getCommissions(), []);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [statutFilter, setStatutFilter] = useState('tous');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
@@ -37,13 +37,12 @@ export default function AdminCommissionsPage() {
 
   const handleApprove = async (id: string) => {
     setActionLoading(`approve-${id}`);
-    setFeedback(null);
     try {
       await updateCommissionStatut(id, 'approuvee');
-      setFeedback({ type: 'success', message: 'Commission approuvée.' });
+      toast.success('Commission approuvée.');
       refetch();
     } catch (err) {
-      setFeedback({ type: 'error', message: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` });
+      toast.error(`Erreur: ${err instanceof Error ? err.message : 'Inconnue'}`);
     } finally {
       setActionLoading(null);
     }
@@ -51,7 +50,6 @@ export default function AdminCommissionsPage() {
 
   const handlePay = async (id: string) => {
     setActionLoading(`pay-${id}`);
-    setFeedback(null);
     try {
       await updateCommissionStatut(id, 'payee');
       toast.success('Commission marquée comme payée.');
@@ -64,8 +62,8 @@ export default function AdminCommissionsPage() {
   };
 
   const handleReject = async (id: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir rejeter cette commission ?')) return;
     setActionLoading(`reject-${id}`);
-    setFeedback(null);
     try {
       await updateCommissionStatut(id, 'rejetee');
       toast.success('Commission rejetée.');
@@ -91,6 +89,7 @@ export default function AdminCommissionsPage() {
   const { page, setPage, totalPages, paginatedItems } = usePagination(commissions, 15);
 
   if (loading) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
@@ -150,12 +149,6 @@ export default function AdminCommissionsPage() {
           onDateFinChange={setDateFin}
         />
       </div>
-
-      {feedback && (
-        <div className={`p-3 rounded-lg text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-          {feedback.message}
-        </div>
-      )}
 
       <Card>
         <CardHeader>

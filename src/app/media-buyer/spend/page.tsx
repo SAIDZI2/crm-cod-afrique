@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/select';
 import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { KpiCard } from '@/components/kpi-card';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { getDepenses, getCommandes, getProduits, createDepense } from '@/lib/supabase/queries';
@@ -42,6 +44,7 @@ export default function SpendPage() {
   const { data: commandesData, loading: l2 } = useSupabase(() => (user ? getCommandes({ userId: user.id }) : Promise.resolve([])), [user?.id]);
   const { data: produitsData, loading: l3 } = useSupabase(() => getProduits(), []);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
   const [newDepense, setNewDepense] = useState({
     produit_id: '',
     montant: '',
@@ -57,6 +60,7 @@ export default function SpendPage() {
   const produits = produitsData ?? [];
 
   const filteredDepenses = filterByDateRange(depenses, 'date_depense', dateDebut, dateFin);
+  const { page, setPage, totalPages, paginatedItems } = usePagination(filteredDepenses, 15);
   const filteredCommandes = filterByDateRange(commandes, 'created_at', dateDebut, dateFin);
 
   const totalDepense = filteredDepenses.reduce((sum, d) => sum + d.montant, 0);
@@ -71,6 +75,7 @@ export default function SpendPage() {
       toast.error('Veuillez remplir le montant et la date.');
       return;
     }
+    setAddLoading(true);
     try {
       await createDepense({
         user_id: user.id,
@@ -85,6 +90,8 @@ export default function SpendPage() {
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+    } finally {
+      setAddLoading(false);
     }
   }
 
@@ -122,7 +129,7 @@ export default function SpendPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Montant ($) *</Label>
+                <Label>Montant (DH) *</Label>
                 <Input
                   type="number"
                   min={0}
@@ -154,8 +161,8 @@ export default function SpendPage() {
                   rows={2}
                 />
               </div>
-              <Button onClick={handleAddDepense} className="w-full">
-                Ajouter
+              <Button onClick={handleAddDepense} className="w-full" disabled={addLoading}>
+                {addLoading ? 'Ajout en cours...' : 'Ajouter'}
               </Button>
             </div>
           </DialogContent>
@@ -204,7 +211,10 @@ export default function SpendPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredDepenses.map((depense) => {
+              {filteredDepenses.length === 0 && (
+                <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Aucune dépense enregistrée.</TableCell></TableRow>
+              )}
+              {paginatedItems.map((depense) => {
                 const produit = produits.find((p) => p.id === depense.produit_id);
                 return (
                   <TableRow key={depense.id}>
@@ -219,6 +229,7 @@ export default function SpendPage() {
               })}
             </TableBody>
           </Table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filteredDepenses.length} />
         </CardContent>
       </Card>
     </div>

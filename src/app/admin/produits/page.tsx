@@ -10,7 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Pagination } from '@/components/pagination';
+import { usePagination } from '@/hooks/use-pagination';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { ErrorDisplay } from '@/components/error-display';
 import { getProduits, createProduit, updateProduit, deleteProduit } from '@/lib/supabase/queries';
 import { uploadProductImage } from '@/lib/supabase/storage';
 import { formatCurrency, CATEGORIES_PRODUITS } from '@/lib/constants';
@@ -18,10 +22,12 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Pencil, Trash2, ImagePlus } from 'lucide-react';
 
 export default function AdminProduitsPage() {
-  const { data: produitsData, loading, refetch } = useSupabase(() => getProduits(), []);
+  const { data: produitsData, loading, error, refetch } = useSupabase(() => getProduits(), []);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
   const [form, setForm] = useState({
     nom: '',
@@ -49,7 +55,11 @@ export default function AdminProduitsPage() {
   const resetForm = () => { setForm({ nom: '', sku: '', categorie: '', prix: '', commission_livraison: '', stock: '', description: '' }); setImageFile(null); };
 
   const handleCreate = async () => {
-    if (!form.nom || !form.prix) { toast.error('Nom et prix requis.'); return; }
+    if (!form.nom.trim()) { toast.error('Le nom du produit est requis.'); return; }
+    const prix = parseFloat(form.prix);
+    if (isNaN(prix) || prix <= 0) { toast.error('Le prix doit être supérieur à 0.'); return; }
+    const stock = parseInt(form.stock);
+    if (form.stock && (isNaN(stock) || stock < 0)) { toast.error('Le stock ne peut pas être négatif.'); return; }
     setFormLoading(true);
     try {
       const newProduit = await createProduit({
@@ -84,6 +94,9 @@ export default function AdminProduitsPage() {
 
   const handleUpdate = async () => {
     if (!editForm) return;
+    if (!editForm.nom.trim()) { toast.error('Le nom du produit est requis.'); return; }
+    const editPrix = parseFloat(editForm.prix);
+    if (isNaN(editPrix) || editPrix <= 0) { toast.error('Le prix doit être supérieur à 0.'); return; }
     setFormLoading(true);
     try {
       await updateProduit(editForm.id, {
@@ -132,14 +145,21 @@ export default function AdminProduitsPage() {
   };
 
   if (loading) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} onRetry={refetch} />;
   const produits = produitsData ?? [];
+
+  const filtered = produits.filter((p) => {
+    const s = debouncedSearch.toLowerCase();
+    return !s || p.nom.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s) || p.categorie.toLowerCase().includes(s);
+  });
+  const { page, setPage, totalPages, paginatedItems } = usePagination(filtered, 15);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Gestion des Produits</h1>
-          <p className="text-sm text-muted-foreground">{produits.length} produits</p>
+          <p className="text-sm text-muted-foreground">{filtered.length} produit{filtered.length > 1 ? 's' : ''}</p>
         </div>
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogTrigger render={<Button><Plus className="w-4 h-4 mr-2" />Nouveau produit</Button>} />
@@ -169,7 +189,7 @@ export default function AdminProduitsPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>Prix ($) *</Label>
+                  <Label>Prix (DH) *</Label>
                   <Input type="number" min="0" value={form.prix} onChange={(e) => setForm({ ...form, prix: e.target.value })} className="mt-1" />
                 </div>
                 <div>
@@ -203,6 +223,13 @@ export default function AdminProduitsPage() {
         </Dialog>
       </div>
 
+      <Input
+        placeholder="Rechercher un produit (nom, SKU, catégorie)..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="max-w-sm"
+      />
+
       <Card>
         <CardContent className="overflow-auto pt-6">
           <Table>
@@ -219,7 +246,7 @@ export default function AdminProduitsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {produits.map((p) => (
+              {paginatedItems.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     {p.image_url ? (
@@ -250,13 +277,14 @@ export default function AdminProduitsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {produits.length === 0 && (
+              {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun produit.</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} />
         </CardContent>
       </Card>
 
@@ -289,7 +317,7 @@ export default function AdminProduitsPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>Prix ($)</Label>
+                  <Label>Prix (DH)</Label>
                   <Input type="number" value={editForm.prix} onChange={(e) => setEditForm({ ...editForm, prix: e.target.value })} className="mt-1" />
                 </div>
                 <div>

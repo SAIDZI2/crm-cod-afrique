@@ -179,6 +179,7 @@ export default function CommandeDetailPage() {
 
   async function handleBlacklister() {
     if (!commande) return;
+    if (!window.confirm(`Êtes-vous sûr de vouloir blacklister le numéro ${commande.telephone} ? Cette action bloquera toutes les futures commandes de ce numéro.`)) return;
     await handleAction('Blacklister', async () => {
       await addToBlacklist({
         telephone: commande.telephone,

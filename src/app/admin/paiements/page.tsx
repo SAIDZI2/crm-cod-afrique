@@ -5,11 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { Pagination } from '@/components/pagination';
 import { usePagination } from '@/hooks/use-pagination';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
+import { ErrorDisplay } from '@/components/error-display';
 import { getAllPaiements, updatePaiement } from '@/lib/supabase/queries';
 import { formatCurrency, formatDate } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -23,24 +26,36 @@ const statutColors: Record<string, { label: string; className: string }> = {
 };
 
 export default function AdminPaiementsPage() {
-  const { data: paiementsData, loading, refetch } = useSupabase(() => getAllPaiements(), []);
+  const { data: paiementsData, loading, error, refetch } = useSupabase(() => getAllPaiements(), []);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [statutFilter, setStatutFilter] = useState('tous');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
   const allPaiements = paiementsData ?? [];
   const paiements = filterByDateRange(allPaiements, 'created_at', dateDebut, dateFin).filter((p) => {
-    return statutFilter === 'tous' || p.statut === statutFilter;
+    const matchStatut = statutFilter === 'tous' || p.statut === statutFilter;
+    const s = debouncedSearch.toLowerCase();
+    const pAny = p as any;
+    const matchSearch = !s ||
+      pAny.user?.nom?.toLowerCase().includes(s) ||
+      pAny.user?.email?.toLowerCase().includes(s) ||
+      p.reference?.toLowerCase().includes(s) ||
+      p.methode?.toLowerCase().includes(s);
+    return matchStatut && matchSearch;
   });
   const { page, setPage, totalPages, paginatedItems } = usePagination(paiements, 15);
 
   if (loading) return <LoadingPage />;
+  if (error) return <ErrorDisplay error={error} onRetry={refetch} />;
 
   const enAttente = allPaiements.filter(p => p.statut === 'en_attente');
   const totalEnAttente = enAttente.reduce((s, p) => s + p.montant, 0);
 
   const handleAction = async (id: string, statut: string) => {
+    if (statut === 'rejete' && !window.confirm('Êtes-vous sûr de vouloir rejeter ce paiement ?')) return;
     setActionLoading(`${statut}-${id}`);
     try {
       await updatePaiement(id, { statut } as Record<string, unknown>);
@@ -64,18 +79,26 @@ export default function AdminPaiementsPage() {
 
       {/* Filters */}
       <div className="space-y-3">
-        <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tous">Tous les statuts</SelectItem>
-            <SelectItem value="en_attente">En Attente</SelectItem>
-            <SelectItem value="approuve">Approuvé</SelectItem>
-            <SelectItem value="paye">Payé</SelectItem>
-            <SelectItem value="rejete">Rejeté</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-3">
+          <Select value={statutFilter} onValueChange={(v) => v && setStatutFilter(v)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">Tous les statuts</SelectItem>
+              <SelectItem value="en_attente">En Attente</SelectItem>
+              <SelectItem value="approuve">Approuvé</SelectItem>
+              <SelectItem value="paye">Payé</SelectItem>
+              <SelectItem value="rejete">Rejeté</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Rechercher (nom, email, référence, méthode)..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
         <DateRangeFilter
           dateDebut={dateDebut}
           dateFin={dateFin}

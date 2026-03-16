@@ -203,6 +203,27 @@ export interface Retour {
   commande?: Commande;
 }
 
+// Extended types for queries with joins
+export interface CommandeWithRelations extends Commande {
+  user?: User;
+  agent?: User;
+  livreur?: User;
+  commande_produits?: (CommandeProduit & { produit?: Produit })[];
+}
+
+export interface CommissionWithRelations extends Commission {
+  user?: User;
+  commande?: Commande;
+}
+
+export interface PaiementWithRelations extends Paiement {
+  user?: User;
+}
+
+export interface RappelWithRelations extends Rappel {
+  commande?: Commande;
+}
+
 // --- Dashboard KPIs ---
 
 export interface KpiData {
