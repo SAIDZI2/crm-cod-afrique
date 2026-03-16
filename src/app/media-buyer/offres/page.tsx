@@ -53,10 +53,10 @@ export default function OffresPage() {
         />
         <Select value={categorie} onValueChange={(v) => v && setCategorie(v)}>
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Categorie" />
+            <SelectValue placeholder="Catégorie" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="toutes">Toutes les categories</SelectItem>
+            <SelectItem value="toutes">Toutes les catégories</SelectItem>
             {CATEGORIES_PRODUITS.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -109,7 +109,7 @@ export default function OffresPage() {
 
       {filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          Aucun produit ne correspond a votre recherche.
+          Aucun produit ne correspond à votre recherche.
         </div>
       )}
     </div>

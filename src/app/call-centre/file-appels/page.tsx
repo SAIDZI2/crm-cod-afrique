@@ -134,7 +134,7 @@ export default function FileAppelsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">File d&apos;Appels</h1>
         <p className="text-sm text-gray-500 mt-1">
-          File intelligente triee par priorite - {filteredItems.length} leads en attente
+          File intelligente triée par priorité - {filteredItems.length} leads en attente
         </p>
       </div>
 
@@ -159,7 +159,7 @@ export default function FileAppelsPage() {
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Recherche</label>
               <Input
-                placeholder="Nom, telephone, ID..."
+                placeholder="Nom, téléphone, ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-[220px]"
@@ -212,8 +212,8 @@ export default function FileAppelsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Priorite</TableHead>
-                <TableHead>Heure arrivee</TableHead>
+                <TableHead>Priorité</TableHead>
+                <TableHead>Heure arrivée</TableHead>
                 <TableHead>Nom client</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Produit</TableHead>

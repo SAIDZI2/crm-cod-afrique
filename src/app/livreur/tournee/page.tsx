@@ -28,9 +28,9 @@ export default function LivreurTourneePage() {
   const [filter, setFilter] = useState<FilterTab>('tous');
   const [expandedLivre, setExpandedLivre] = useState<string | null>(null);
   const [expandedRetour, setExpandedRetour] = useState<string | null>(null);
-  const [montantCollecte, setMontantCollecte] = useState<string>('');
-  const [motifRetour, setMotifRetour] = useState<MotifRetour | ''>('');
-  const [noteRetour, setNoteRetour] = useState('');
+  const [montantCollecteMap, setMontantCollecteMap] = useState<Record<string, string>>({});
+  const [motifRetourMap, setMotifRetourMap] = useState<Record<string, MotifRetour | ''>>({});
+  const [noteRetourMap, setNoteRetourMap] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -53,12 +53,12 @@ export default function LivreurTourneePage() {
     try {
       await updateTourneeCommande(tcId, {
         statut_livraison: 'livre',
-        montant_collecte: Number(montantCollecte) || 0,
+        montant_collecte: Number(montantCollecteMap[tcId] ?? '') || 0,
         heure_livraison: new Date().toISOString(),
       });
       await handleDeliveryComplete(commandeId);
       setExpandedLivre(null);
-      setMontantCollecte('');
+      setMontantCollecteMap(prev => { const next = { ...prev }; delete next[tcId]; return next; });
       setFeedback({ type: 'success', message: 'Livraison confirmée avec succès.' });
       refetch();
     } catch (err) {
@@ -69,27 +69,29 @@ export default function LivreurTourneePage() {
   };
 
   const handleConfirmRetour = async (tcId: string, commandeId: string) => {
-    if (!motifRetour) return;
+    const currentMotif = motifRetourMap[tcId] ?? '';
+    const currentNote = noteRetourMap[tcId] ?? '';
+    if (!currentMotif) return;
     setActionLoading(tcId);
     setFeedback(null);
     try {
       await updateTourneeCommande(tcId, {
         statut_livraison: 'retourne',
-        motif_retour: motifRetour as MotifRetour,
+        motif_retour: currentMotif as MotifRetour,
       });
       if (!user) return;
       await createRetour({
         commande_id: commandeId,
         livreur_id: user.id,
-        motif: motifRetour as MotifRetour,
-        note: noteRetour || undefined,
+        motif: currentMotif as MotifRetour,
+        note: currentNote || undefined,
         recu_au_depot: false,
         date_retour: new Date().toISOString(),
       });
       await updateCommandeStatutSecure(commandeId, 'en_retour');
       setExpandedRetour(null);
-      setMotifRetour('');
-      setNoteRetour('');
+      setMotifRetourMap(prev => { const next = { ...prev }; delete next[tcId]; return next; });
+      setNoteRetourMap(prev => { const next = { ...prev }; delete next[tcId]; return next; });
       setFeedback({ type: 'success', message: 'Retour déclaré avec succès.' });
       refetch();
     } catch (err) {
@@ -206,11 +208,11 @@ export default function LivreurTourneePage() {
                       onClick={() => {
                         setExpandedLivre(tc.id);
                         setExpandedRetour(null);
-                        setMontantCollecte(String(cmd.montant_total));
+                        setMontantCollecteMap(prev => ({ ...prev, [tc.id]: String(cmd.montant_total) }));
                       }}
                     >
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      Livre
+                      Livré
                     </Button>
                     <Button
                       className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white text-base"
@@ -246,8 +248,8 @@ export default function LivreurTourneePage() {
                         id={`montant-${tc.id}`}
                         type="number"
                         step="0.01"
-                        value={montantCollecte}
-                        onChange={e => setMontantCollecte(e.target.value)}
+                        value={montantCollecteMap[tc.id] ?? ''}
+                        onChange={e => setMontantCollecteMap(prev => ({ ...prev, [tc.id]: e.target.value }))}
                         className="mt-1 min-h-12 text-lg"
                         placeholder="0.00"
                       />
@@ -274,8 +276,8 @@ export default function LivreurTourneePage() {
                     <div>
                       <Label className="text-sm font-medium">Motif du retour</Label>
                       <Select
-                        value={motifRetour}
-                        onValueChange={(val) => val && setMotifRetour(val as MotifRetour)}
+                        value={motifRetourMap[tc.id] ?? ''}
+                        onValueChange={(val) => val && setMotifRetourMap(prev => ({ ...prev, [tc.id]: val as MotifRetour }))}
                       >
                         <SelectTrigger className="mt-1 min-h-12 w-full">
                           <SelectValue placeholder="Sélectionner un motif" />
@@ -292,8 +294,8 @@ export default function LivreurTourneePage() {
                     <div>
                       <Label className="text-sm font-medium">Note (optionnel)</Label>
                       <Textarea
-                        value={noteRetour}
-                        onChange={e => setNoteRetour(e.target.value)}
+                        value={noteRetourMap[tc.id] ?? ''}
+                        onChange={e => setNoteRetourMap(prev => ({ ...prev, [tc.id]: e.target.value }))}
                         className="mt-1 min-h-20"
                         placeholder="Détails supplémentaires..."
                       />
@@ -302,7 +304,7 @@ export default function LivreurTourneePage() {
                       <Button
                         className="flex-1 min-h-12 bg-red-600 hover:bg-red-700 text-white"
                         onClick={() => handleConfirmRetour(tc.id, cmd.id)}
-                        disabled={!motifRetour || actionLoading === tc.id}
+                        disabled={!(motifRetourMap[tc.id]) || actionLoading === tc.id}
                       >
                         {actionLoading === tc.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         Confirmer retour

@@ -78,7 +78,7 @@ export default function RappelsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Rappels</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Gestion des rappels planifies - {filteredRappels.length} rappels
+          Gestion des rappels planifiés - {filteredRappels.length} rappels
         </p>
       </div>
 

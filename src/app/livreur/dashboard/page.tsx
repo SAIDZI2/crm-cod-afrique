@@ -47,14 +47,14 @@ export default function LivreurDashboardPage() {
       c => c.commande && (!c.commande.adresse || c.commande.adresse.trim() === '')
     );
     if (sansAdresse.length > 0) {
-      items.push({ type: 'warning', message: `${sansAdresse.length} colis avec adresse incomplete` });
+      items.push({ type: 'warning', message: `${sansAdresse.length} colis avec adresse incomplète` });
     }
     const enAttenteCount = commandes.filter(c => c.statut_livraison === 'en_attente').length;
     if (enAttenteCount > 0) {
       items.push({ type: 'warning', message: `${enAttenteCount} colis en attente de prise en charge` });
     }
     if (stats.retourne > 0) {
-      items.push({ type: 'info', message: `${stats.retourne} colis retournes aujourd'hui` });
+      items.push({ type: 'info', message: `${stats.retourne} colis retournés aujourd'hui` });
     }
     if (stats.tauxLivraison >= 80) {
       items.push({ type: 'info', message: `Excellent taux de livraison: ${stats.tauxLivraison}%` });
@@ -75,13 +75,13 @@ export default function LivreurDashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard
-          label="Colis a livrer"
+          label="Colis à livrer"
           value={stats.total}
           color="border-l-blue-500"
-          subtitle="Total tournee"
+          subtitle="Total tournée"
         />
         <KpiCard
-          label="Livres"
+          label="Livrés"
           value={stats.livre}
           color="border-l-green-500"
           subtitle="Confirmés"
@@ -90,25 +90,25 @@ export default function LivreurDashboardPage() {
           label="En cours"
           value={stats.enCours}
           color="border-l-orange-500"
-          subtitle="A traiter"
+          subtitle="À traiter"
         />
         <KpiCard
-          label="Retournes"
+          label="Retournés"
           value={stats.retourne}
           color="border-l-red-500"
-          subtitle="Echecs"
+          subtitle="Échecs"
         />
         <KpiCard
-          label="Cash collecte"
+          label="Cash collecté"
           value={formatCurrency(stats.cashCollecte)}
           color="border-l-emerald-500"
-          subtitle="Total encaisse"
+          subtitle="Total encaissé"
         />
         <KpiCard
           label="Taux de livraison"
           value={`${stats.tauxLivraison}%`}
           color={stats.tauxLivraison >= 70 ? 'border-l-green-500' : 'border-l-red-500'}
-          subtitle={stats.tauxLivraison >= 70 ? 'Bon' : 'A ameliorer'}
+          subtitle={stats.tauxLivraison >= 70 ? 'Bon' : 'À améliorer'}
         />
       </div>
 
@@ -117,7 +117,7 @@ export default function LivreurDashboardPage() {
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">
-              {stats.livre}/{stats.total} colis livres
+              {stats.livre}/{stats.total} colis livrés
             </span>
             <span className="text-sm text-muted-foreground">{stats.tauxLivraison}%</span>
           </div>
@@ -130,7 +130,7 @@ export default function LivreurDashboardPage() {
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Livres ({stats.livre})
+              Livrés ({stats.livre})
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-orange-500 inline-block" />
@@ -138,7 +138,7 @@ export default function LivreurDashboardPage() {
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-              Retournes ({stats.retourne})
+              Retournés ({stats.retourne})
             </span>
           </div>
         </CardContent>

@@ -54,7 +54,7 @@ export default function EquipePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Sous-affilies</CardTitle>
+          <CardTitle>Sous-affiliés</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

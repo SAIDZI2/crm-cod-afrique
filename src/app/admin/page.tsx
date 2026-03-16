@@ -152,7 +152,7 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <Calendar className="w-5 h-5 text-gray-400" />
-          <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-800">Tableau de bord</h1>
         </div>
         <div className="flex items-center gap-1 bg-white rounded-lg shadow-sm p-1">
           {periods.map((p) => (
@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
           iconColor="text-orange-500"
         />
         <KpiCard
-          label="Revenu (livre)"
+          label="Revenu (livré)"
           value={formatCurrency(revenuTotal)}
           icon={DollarSign}
           iconBg="bg-pink-100"
@@ -209,7 +209,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {commandesParJour.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnee.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnée.</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={commandesParJour}>
@@ -240,11 +240,11 @@ export default function AdminDashboardPage() {
 
         <Card className="lg:col-span-2 border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold text-gray-700">Repartition par statut</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-700">Répartition par statut</CardTitle>
           </CardHeader>
           <CardContent>
             {statutData.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnee.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnée.</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Badge variant="secondary" className="text-xs">Conf. {confirmes}</Badge>
-                    <Badge variant="default" className="text-xs">Livre {livres}</Badge>
+                    <Badge variant="default" className="text-xs">Livré {livres}</Badge>
                   </div>
                 </div>
               ))
@@ -313,7 +313,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {revenuParJour.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnee.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Aucune donnée.</p>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={revenuParJour}>

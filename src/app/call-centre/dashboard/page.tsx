@@ -33,15 +33,20 @@ export default function CallCentreDashboard() {
 
   if (loadingCommandes || loadingRappels || loadingAppels) return <LoadingPage />;
 
-  const commandes = commandesData ?? [];
+  const allCommandes = commandesData ?? [];
   const rappels = rappelsData ?? [];
-  const appels = appelsData ?? [];
+  const allAppels = appelsData ?? [];
+
+  // Filter to only include today's data for "aujourd'hui" stats
+  const today = new Date().toISOString().split('T')[0];
+  const commandesAuj = allCommandes.filter(c => c.created_at?.startsWith(today));
+  const appelsAuj = allAppels.filter(a => a.date_appel?.startsWith(today));
 
   const stats = (() => {
-    const nouveau = commandes.filter((c) => c.statut === 'nouveau').length;
+    const nouveau = allCommandes.filter((c) => c.statut === 'nouveau').length;
     const rappelsAujourdhui = rappels.filter((r) => r.statut === 'en_attente').length;
-    // Filter by current agent for personal stats
-    const myCommandes = user ? commandes.filter((c) => (c as unknown as { agent_id?: string }).agent_id === user.id) : commandes;
+    // Filter by current agent for personal stats - today only
+    const myCommandes = user ? commandesAuj.filter((c) => (c as unknown as { agent_id?: string }).agent_id === user.id) : commandesAuj;
     const confirme = myCommandes.filter((c) => c.statut === 'confirme').length;
     const echoue = myCommandes.filter((c) => c.statut === 'echoue').length;
     const reporte = myCommandes.filter((c) => c.statut === 'reporte').length;
@@ -52,15 +57,15 @@ export default function CallCentreDashboard() {
   })();
 
   const performanceStats = (() => {
-    const appelsPassés = appels.length;
-    const totalDuree = appels.reduce((acc, a) => acc + a.duree_secondes, 0);
+    const appelsPassés = appelsAuj.length;
+    const totalDuree = appelsAuj.reduce((acc, a) => acc + a.duree_secondes, 0);
     const dureeMoyenne = appelsPassés > 0 ? Math.round(totalDuree / appelsPassés) : 0;
     const minutes = Math.floor(dureeMoyenne / 60);
     const seconds = dureeMoyenne % 60;
 
     // Group calls by hour to find best hour
     const hourCounts: Record<number, number> = {};
-    appels.forEach((a) => {
+    appelsAuj.forEach((a) => {
       const hour = new Date(a.date_appel).getHours();
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
@@ -73,7 +78,7 @@ export default function CallCentreDashboard() {
     };
   })();
 
-  const leadsUrgents = commandes
+  const leadsUrgents = allCommandes
     .filter((c) => c.statut === 'nouveau')
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .slice(0, 5);

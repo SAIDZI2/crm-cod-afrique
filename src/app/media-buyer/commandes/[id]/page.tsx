@@ -45,7 +45,7 @@ export default function CommandeDetailPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Commande {commande.id}</h1>
-          <p className="text-sm text-muted-foreground">Creee le {formatDateTime(commande.created_at)}</p>
+          <p className="text-sm text-muted-foreground">Créée le {formatDateTime(commande.created_at)}</p>
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge statut={commande.statut} />
@@ -90,7 +90,7 @@ export default function CommandeDetailPage() {
         {/* Financial Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Resume Financier</CardTitle>
+            <CardTitle>Résumé Financier</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">
@@ -104,7 +104,7 @@ export default function CommandeDetailPage() {
               </div>
             )}
             <div className="flex justify-between border-t pt-2">
-              <span className="text-sm text-muted-foreground">Net a Payer</span>
+              <span className="text-sm text-muted-foreground">Net à Payer</span>
               <span className="font-bold text-lg">
                 {formatCurrency(commande.montant_total - commande.remise)}
               </span>
@@ -169,7 +169,7 @@ export default function CommandeDetailPage() {
             )}
           </div>
           <div className="mt-4 text-sm text-muted-foreground">
-            Derniere mise a jour: {formatDateTime(commande.updated_at)}
+            Dernière mise à jour : {formatDateTime(commande.updated_at)}
           </div>
         </CardContent>
       </Card>
@@ -186,11 +186,11 @@ export default function CommandeDetailPage() {
               <p className="font-mono font-medium">{commande.id}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Date de Creation</span>
+              <span className="text-muted-foreground">Date de Création</span>
               <p className="font-medium">{formatDate(commande.created_at)}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Creee par</span>
+              <span className="text-muted-foreground">Créée par</span>
               <p className="font-medium">{(commande as unknown as { user?: { nom: string } }).user?.nom ?? commande.user_id}</p>
             </div>
             {commande.agent_id && (

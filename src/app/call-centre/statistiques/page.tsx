@@ -12,8 +12,6 @@ import {
 } from '@/components/ui/table';
 import { BarChart } from '@/components/charts/bar-chart';
 import { LineChart } from '@/components/charts/line-chart';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { DateRangeFilter, filterByDateRange } from '@/components/date-range-filter';
 import { useSupabase, LoadingPage } from '@/hooks/use-supabase';
 import { useAuth } from '@/hooks/use-auth';

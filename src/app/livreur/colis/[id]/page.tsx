@@ -300,7 +300,7 @@ export default function LivreurColisDetailPage() {
             }}
           >
             <CheckCircle className="w-6 h-6 mr-2" />
-            Livre
+            Livré
           </Button>
           <div className="grid grid-cols-2 gap-2">
             {MOTIFS_RETOUR.slice(0, 4).map(motif => (
@@ -333,7 +333,7 @@ export default function LivreurColisDetailPage() {
               onClick={() => setAction('probleme')}
             >
               <AlertTriangle className="w-4 h-4 mr-2" />
-              Signaler probleme
+              Signaler problème
             </Button>
           </div>
         </div>

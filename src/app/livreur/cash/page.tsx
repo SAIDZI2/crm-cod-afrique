@@ -110,7 +110,7 @@ export default function LivreurCashPage() {
       <div>
         <h1 className="text-2xl font-bold">Gestion du Cash</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Suivi des encaissements et remises de la journee
+          Suivi des encaissements et remises de la journée
         </p>
       </div>
 
@@ -121,11 +121,11 @@ export default function LivreurCashPage() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        <KpiCard label="Cash Theorique Du" value={formatCurrency(stats.cashTheorique)} color="border-l-blue-500" subtitle="Montant attendu" />
-        <KpiCard label="Cash Collecte" value={formatCurrency(stats.cashCollecte)} color="border-l-green-500" subtitle="Reellement encaisse" />
-        <KpiCard label="Ecart" value={formatCurrency(stats.ecart)} color={stats.ecart === 0 ? 'border-l-green-500' : 'border-l-red-500'} subtitle={stats.ecart === 0 ? 'Aucun écart' : 'A justifier'} />
-        <KpiCard label="Cash Deja Remis" value={formatCurrency(stats.cashDejaRemis)} color="border-l-purple-500" subtitle={`${remisesCash.length} remise(s)`} />
-        <KpiCard label="Cash Restant" value={formatCurrency(stats.cashRestant)} color={stats.cashRestant > 0 ? 'border-l-orange-500' : 'border-l-green-500'} subtitle="A remettre" />
+        <KpiCard label="Cash Théorique Dû" value={formatCurrency(stats.cashTheorique)} color="border-l-blue-500" subtitle="Montant attendu" />
+        <KpiCard label="Cash Collecté" value={formatCurrency(stats.cashCollecte)} color="border-l-green-500" subtitle="Réellement encaissé" />
+        <KpiCard label="Écart" value={formatCurrency(stats.ecart)} color={stats.ecart === 0 ? 'border-l-green-500' : 'border-l-red-500'} subtitle={stats.ecart === 0 ? 'Aucun écart' : 'À justifier'} />
+        <KpiCard label="Cash Déjà Remis" value={formatCurrency(stats.cashDejaRemis)} color="border-l-purple-500" subtitle={`${remisesCash.length} remise(s)`} />
+        <KpiCard label="Cash Restant" value={formatCurrency(stats.cashRestant)} color={stats.cashRestant > 0 ? 'border-l-orange-500' : 'border-l-green-500'} subtitle="À remettre" />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -134,37 +134,37 @@ export default function LivreurCashPage() {
             render={
               <Button className="min-h-12 flex-1 bg-green-600 hover:bg-green-700 text-white text-base">
                 <ClipboardCheck className="w-5 h-5 mr-2" />
-                Cloture de tournee
+                Clôture de tournée
               </Button>
             }
           />
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Cloture de tournee</DialogTitle>
+              <DialogTitle>Clôture de tournée</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cash theorique</span>
+                  <span className="text-muted-foreground">Cash théorique</span>
                   <span className="font-medium">{formatCurrency(stats.cashTheorique)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cash collecte</span>
+                  <span className="text-muted-foreground">Cash collecté</span>
                   <span className="font-medium">{formatCurrency(stats.cashCollecte)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Ecart</span>
+                  <span className="text-muted-foreground">Écart</span>
                   <span className={`font-medium ${stats.ecart !== 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {formatCurrency(stats.ecart)}
                   </span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Deja remis</span>
+                  <span className="text-muted-foreground">Déjà remis</span>
                   <span className="font-medium">{formatCurrency(stats.cashDejaRemis)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-lg">
-                  <span>Restant a remettre</span>
+                  <span>Restant à remettre</span>
                   <span className="text-orange-600">{formatCurrency(stats.cashRestant)}</span>
                 </div>
               </div>
@@ -180,7 +180,7 @@ export default function LivreurCashPage() {
                 disabled={actionLoading === 'cloture' || !tourneeEnCours}
               >
                 {actionLoading === 'cloture' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Confirmer la cloture
+                Confirmer la clôture
               </Button>
             </div>
           </DialogContent>
@@ -201,10 +201,10 @@ export default function LivreurCashPage() {
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <p className="text-sm text-muted-foreground">
-                Cash restant a remettre: <span className="font-bold text-foreground">{formatCurrency(stats.cashRestant)}</span>
+                Cash restant à remettre : <span className="font-bold text-foreground">{formatCurrency(stats.cashRestant)}</span>
               </p>
               <div>
-                <Label className="text-sm font-medium">Montant a remettre</Label>
+                <Label className="text-sm font-medium">Montant à remettre</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -229,7 +229,7 @@ export default function LivreurCashPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Detail des encaissements</CardTitle>
+          <CardTitle className="text-base">Détail des encaissements</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -238,8 +238,8 @@ export default function LivreurCashPage() {
                 <TableRow>
                   <TableHead>ID Commande</TableHead>
                   <TableHead>Nom client</TableHead>
-                  <TableHead className="text-right">Montant theorique</TableHead>
-                  <TableHead className="text-right">Montant collecte</TableHead>
+                  <TableHead className="text-right">Montant théorique</TableHead>
+                  <TableHead className="text-right">Montant collecté</TableHead>
                   <TableHead>Heure</TableHead>
                   <TableHead>Statut remise</TableHead>
                 </TableRow>
@@ -306,7 +306,7 @@ export default function LivreurCashPage() {
                 </div>
                 <div className="text-right">
                   {r.ecart !== 0 && (
-                    <p className="text-xs text-red-600">Ecart: {formatCurrency(r.ecart)}</p>
+                    <p className="text-xs text-red-600">Écart : {formatCurrency(r.ecart)}</p>
                   )}
                 </div>
               </div>

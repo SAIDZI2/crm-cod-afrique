@@ -144,7 +144,7 @@ export default function AdminTourneesPage() {
                           <input
                             type="checkbox"
                             checked={selectedCommandes.includes(cmd.id)}
-                            onChange={() => toggleCommande(cmd.id)}
+                            onChange={(e) => e.stopPropagation()}
                             className="rounded"
                           />
                           <div>

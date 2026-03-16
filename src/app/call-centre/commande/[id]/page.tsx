@@ -383,7 +383,7 @@ export default function CommandeDetailPage() {
             <div className="flex items-center gap-4">
               <Phone className="w-5 h-5 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Chronometre d&apos;appel</p>
+                <p className="text-sm font-medium">Chronomètre d&apos;appel</p>
                 <p className={`text-2xl font-mono font-bold ${callActive ? 'text-green-600' : 'text-gray-400'}`}>
                   {formatTimer(callSeconds)}
                 </p>

@@ -57,10 +57,11 @@ export default function SpendPage() {
   const produits = produitsData ?? [];
 
   const filteredDepenses = filterByDateRange(depenses, 'date_depense', dateDebut, dateFin);
+  const filteredCommandes = filterByDateRange(commandes, 'created_at', dateDebut, dateFin);
 
   const totalDepense = filteredDepenses.reduce((sum, d) => sum + d.montant, 0);
-  const totalLeads = commandes.length;
-  const totalLivres = commandes.filter((c) => c.statut === 'livre').length;
+  const totalLeads = filteredCommandes.length;
+  const totalLivres = filteredCommandes.filter((c) => c.statut === 'livre').length;
   const cpl = totalLeads > 0 ? totalDepense / totalLeads : 0;
   const cpd = totalLivres > 0 ? totalDepense / totalLivres : 0;
 

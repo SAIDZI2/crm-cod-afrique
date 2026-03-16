@@ -34,7 +34,7 @@ export default function LivreurRetoursPage() {
   const handleToggleRecuDepot = async (retourId: string, currentValue: boolean) => {
     try {
       await updateRetour(retourId, { recu_au_depot: !currentValue } as Record<string, unknown>);
-      toast.success(!currentValue ? 'Marque comme recu au depot.' : 'Marque comme non recu.');
+      toast.success(!currentValue ? 'Marqué comme reçu au dépôt.' : 'Marqué comme non reçu.');
       refetch();
     } catch (err) {
       toast.error('Erreur: ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
@@ -59,7 +59,7 @@ export default function LivreurRetoursPage() {
       <div>
         <h1 className="text-2xl font-bold">Retours</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gestion des colis retournes
+          Gestion des colis retournés
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export default function LivreurRetoursPage() {
                   <TableHead>Client</TableHead>
                   <TableHead>Motif retour</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="text-center">Recu au depot</TableHead>
+                  <TableHead className="text-center">Reçu au dépôt</TableHead>
                   <TableHead>Note</TableHead>
                 </TableRow>
               </TableHeader>
@@ -112,7 +112,7 @@ export default function LivreurRetoursPage() {
                 {retours.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Aucun retour enregistre.
+                      Aucun retour enregistré.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -141,7 +141,7 @@ export default function LivreurRetoursPage() {
                           <button
                             onClick={() => handleToggleRecuDepot(retour.id, retour.recu_au_depot)}
                             className="cursor-pointer hover:scale-110 transition-transform"
-                            title={retour.recu_au_depot ? 'Marquer comme non recu' : 'Marquer comme recu au depot'}
+                            title={retour.recu_au_depot ? 'Marquer comme non reçu' : 'Marquer comme reçu au dépôt'}
                           >
                             {retour.recu_au_depot ? (
                               <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
