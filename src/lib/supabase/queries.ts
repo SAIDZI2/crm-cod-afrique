@@ -99,6 +99,17 @@ export async function deleteProduit(id: string) {
 }
 
 // ============================================
+// COMMANDE ID GENERATOR
+// ============================================
+function generateCommandeId(ville: string): string {
+  const prefix = ville.substring(0, 3).toUpperCase();
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let suffix = '';
+  for (let i = 0; i < 10; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  return `${prefix}-${suffix}`;
+}
+
+// ============================================
 // COMMANDES
 // ============================================
 export async function getCommandes(filters?: {
@@ -197,6 +208,7 @@ export async function updateCommandeStatut(id: string, statut: StatutCommande, a
 }
 
 export async function createCommande(commande: Partial<Commande>) {
+  if (!commande.id) commande.id = generateCommandeId(commande.ville ?? 'CMD');
   const { data, error } = await supabase
     .from('commandes')
     .insert(commande)

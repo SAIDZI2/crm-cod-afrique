@@ -15,6 +15,7 @@ const sidebarItems = [
   { label: 'Blacklist', href: '/media-buyer/blacklist', icon: 'blacklist' },
   { label: 'Equipe', href: '/media-buyer/equipe', icon: 'equipe' },
   { label: 'Commissions', href: '/media-buyer/commissions', icon: 'commissions' },
+  { label: 'Intégration', href: '/media-buyer/integration', icon: 'integration' },
 ];
 
 export default function MediaBuyerLayout({ children }: { children: React.ReactNode }) {

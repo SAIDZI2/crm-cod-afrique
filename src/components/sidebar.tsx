@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, DollarSign, Wallet,
   Ban, Users, Percent, Phone, ListTodo, Clock, BarChart3,
   Truck, MapPin, Banknote, RotateCcw, History, LogOut, UserCircle,
-  Home,
+  Home, Plug,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -30,6 +30,7 @@ const iconMap: Record<string, LucideIcon> = {
   cash: Banknote,
   retours: RotateCcw,
   historique: History,
+  integration: Plug,
 };
 
 interface SidebarProps {
