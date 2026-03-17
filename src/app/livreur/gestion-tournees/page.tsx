@@ -311,7 +311,7 @@ export default function GestionTourneesPage() {
             ) : (
               <div className="space-y-1">
                 <label className="text-sm font-medium">Commande (en préparation)</label>
-                <Select value={selectedCommandeId} onValueChange={setSelectedCommandeId}>
+                <Select value={selectedCommandeId} onValueChange={(v) => setSelectedCommandeId(v ?? '')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une commande" />
                   </SelectTrigger>
