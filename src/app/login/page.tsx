@@ -12,7 +12,9 @@ import type { UserRole } from '@/lib/types';
 const DEMO_ACCOUNTS = [
   { email: 'said@crm.com', role: 'media_buyer', label: 'Media Buyer', path: '/media-buyer/dashboard', color: 'bg-orange-500' },
   { email: 'karim@crm.com', role: 'call_center', label: 'Call Centre', path: '/call-centre/dashboard', color: 'bg-blue-500' },
+  { email: 'superviseur@crm.com', role: 'superviseur_cc', label: 'Superviseur CC', path: '/call-centre/dashboard', color: 'bg-cyan-500' },
   { email: 'moise@crm.com', role: 'livreur', label: 'Livreur', path: '/livreur/dashboard', color: 'bg-green-500' },
+  { email: 'logistique@crm.com', role: 'responsable_logistique', label: 'Resp. Logistique', path: '/livreur/dashboard', color: 'bg-teal-500' },
   { email: 'admin@crm.com', role: 'admin', label: 'Admin', path: '/admin', color: 'bg-purple-500' },
 ];
 
