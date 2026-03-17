@@ -268,7 +268,7 @@ export default function GestionTourneesPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-1">
               <label className="text-sm font-medium">Livreur</label>
-              <Select value={newLivreurId} onValueChange={setNewLivreurId}>
+              <Select value={newLivreurId} onValueChange={(v) => setNewLivreurId(v ?? '')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un livreur" />
                 </SelectTrigger>
