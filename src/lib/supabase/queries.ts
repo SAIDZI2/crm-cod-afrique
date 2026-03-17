@@ -517,6 +517,22 @@ export async function createRemiseCash(remise: Partial<RemiseCash>) {
   return data as RemiseCash;
 }
 
+export async function updateRemiseCash(id: string, updates: Partial<RemiseCash>) {
+  const { error } = await supabase
+    .from('remises_cash')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateTournee(id: string, updates: Partial<Tournee>) {
+  const { error } = await supabase
+    .from('tournees')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // ============================================
 // COMMISSIONS — MUTATIONS ADMIN
 // ============================================

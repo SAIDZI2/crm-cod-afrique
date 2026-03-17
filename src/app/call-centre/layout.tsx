@@ -6,8 +6,16 @@ import { Header } from '@/components/header';
 import { useAuth, getRoleBasePath, isRoleAllowedForPath } from '@/hooks/use-auth';
 import { LoadingPage } from '@/hooks/use-supabase';
 
-const sidebarItems = [
+const agentItems = [
   { label: 'Dashboard', href: '/call-centre/dashboard', icon: 'dashboard' },
+  { label: "File d'Appels", href: '/call-centre/file-appels', icon: 'file-appels' },
+  { label: 'Rappels', href: '/call-centre/rappels', icon: 'rappels' },
+  { label: 'Statistiques', href: '/call-centre/statistiques', icon: 'statistiques' },
+];
+
+const superviseurItems = [
+  { label: 'Dashboard', href: '/call-centre/dashboard', icon: 'dashboard' },
+  { label: 'Supervision', href: '/call-centre/supervision', icon: 'supervision' },
   { label: "File d'Appels", href: '/call-centre/file-appels', icon: 'file-appels' },
   { label: 'Rappels', href: '/call-centre/rappels', icon: 'rappels' },
   { label: 'Statistiques', href: '/call-centre/statistiques', icon: 'statistiques' },
@@ -29,10 +37,13 @@ export default function CallCentreLayout({ children }: { children: React.ReactNo
     return null;
   }
 
+  const isSuperviseur = user.role === 'superviseur_cc';
+  const sidebarItems = isSuperviseur ? superviseurItems : agentItems;
+
   return (
     <div className="flex min-h-screen">
       <Sidebar
-        title="Call Centre"
+        title={isSuperviseur ? 'Superviseur CC' : 'Call Centre'}
         titleColor="text-blue-600"
         accentColor="bg-blue-500"
         items={sidebarItems}

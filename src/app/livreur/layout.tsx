@@ -6,10 +6,18 @@ import { Header } from '@/components/header';
 import { useAuth, getRoleBasePath, isRoleAllowedForPath } from '@/hooks/use-auth';
 import { LoadingPage } from '@/hooks/use-supabase';
 
-const sidebarItems = [
+const livreurItems = [
   { label: 'Dashboard', href: '/livreur/dashboard', icon: 'dashboard' },
-  { label: 'Ma Tournee', href: '/livreur/tournee', icon: 'tournee' },
+  { label: 'Ma Tournée', href: '/livreur/tournee', icon: 'tournee' },
   { label: 'Cash', href: '/livreur/cash', icon: 'cash' },
+  { label: 'Retours', href: '/livreur/retours', icon: 'retours' },
+  { label: 'Historique', href: '/livreur/historique', icon: 'historique' },
+];
+
+const responsableItems = [
+  { label: 'Dashboard', href: '/livreur/dashboard', icon: 'dashboard' },
+  { label: 'Gestion Tournées', href: '/livreur/gestion-tournees', icon: 'tournee' },
+  { label: 'Validation Cash', href: '/livreur/validation-cash', icon: 'cash' },
   { label: 'Retours', href: '/livreur/retours', icon: 'retours' },
   { label: 'Historique', href: '/livreur/historique', icon: 'historique' },
 ];
@@ -30,10 +38,13 @@ export default function LivreurLayout({ children }: { children: React.ReactNode 
     return null;
   }
 
+  const isResponsable = user.role === 'responsable_logistique';
+  const sidebarItems = isResponsable ? responsableItems : livreurItems;
+
   return (
     <div className="flex min-h-screen">
       <Sidebar
-        title="Livreur"
+        title={isResponsable ? 'Logistique' : 'Livreur'}
         titleColor="text-green-600"
         accentColor="bg-green-500"
         items={sidebarItems}
